@@ -14,5 +14,4 @@ public class TimeSlot {
     private SchoolDay schoolDay;
     private LocalTime startTime;
     private LocalTime endTime;
-    private boolean isLunchBreak;
 }

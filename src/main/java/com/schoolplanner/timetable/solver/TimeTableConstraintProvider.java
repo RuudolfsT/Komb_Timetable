@@ -6,6 +6,10 @@ import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
 import ai.timefold.solver.core.api.score.stream.Joiners;
 import com.schoolplanner.timetable.domain.Lesson;
+import com.schoolplanner.timetable.domain.SchoolClass;
+
+import java.time.LocalTime;
+import java.util.function.Function;
 
 public class TimeTableConstraintProvider implements ConstraintProvider {
 
@@ -17,7 +21,9 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 roomConflict(constraintFactory),
                 studentGroupConflict(constraintFactory),
                 roomTypeMatch(constraintFactory),
+                qualifiedUnitMatch(constraintFactory),
                 teacherAvailability(constraintFactory),
+                schoolGroupLunchConflict(constraintFactory),
 
                 // Soft Constraints
                 teacherRoomStability(constraintFactory)
@@ -60,10 +66,20 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     // Telpai jāatbilst nepieciešamajam telpas tipam
     private Constraint roomTypeMatch(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
-                .filter(lesson -> lesson.getRoom() != null) // Skip if room not assigned yet
+                .filter(lesson -> lesson.getRoom() != null)
                 .filter(lesson -> lesson.getTeachingUnit().getRoomType() != lesson.getRoom().getRoomType())
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("The assigned room must match the required RoomType");
+    }
+
+    // Skolotājs drīkst pasniegt noteikto stundu
+    private Constraint qualifiedUnitMatch(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Lesson.class)
+                .filter(lesson -> lesson.getTeachingUnit() != null)
+                .filter(lesson -> lesson.getTeacher() != null)
+                .filter(lesson -> !lesson.getTeacher().getQualifiedUnits().contains(lesson.getTeachingUnit()))
+                .penalize(HardSoftScore.ONE_HARD)
+                .asConstraint("Teacher must be qualified to teach the subject");
     }
 
     // Skolotājam jābūt pieejamam
@@ -75,7 +91,21 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 .asConstraint("Teacher must be available at the assigned time slot");
     }
 
-    // Skolotājam jāpasniedz stunda ne savā klasē
+    // Katrai klasei ir savs pusdienu laiks, kurā nedrīkst būt stundas
+    private Constraint schoolGroupLunchConflict(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Lesson.class)
+                .filter(lesson -> lesson.getTimeSlot() != null)
+                .join(SchoolClass.class, Joiners.equal(Lesson::getSchoolClass, Function.identity()))
+                .filter((lesson, schoolClass) -> {
+                    LocalTime lessonStart = lesson.getTimeSlot().getStartTime();
+                    LocalTime lunchStart = schoolClass.getLunchTime().start();
+                    return lessonStart.equals(lunchStart);
+                })
+                .penalize(HardSoftScore.ONE_HARD)
+                .asConstraint("Student group cannot have lesson during their lunch");
+    }
+
+    // Skolotājam vēlas pasniegt stundu savā klasē
     private Constraint teacherRoomStability(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getRoom() != null)

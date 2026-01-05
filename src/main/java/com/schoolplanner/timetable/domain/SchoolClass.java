@@ -14,4 +14,5 @@ public class SchoolClass {
     private Long id;
     private String name; // A...
     private int grade; // 1-12
+    private TimeRange lunchTime;
 }
