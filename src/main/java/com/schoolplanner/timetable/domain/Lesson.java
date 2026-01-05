@@ -18,6 +18,8 @@ public class Lesson {
 
     private TeachingUnit teachingUnit;
     private SchoolClass schoolClass;
+
+    @PlanningVariable(valueRangeProviderRefs = "teacherRange")
     private Teacher teacher;
 
     @PlanningVariable(valueRangeProviderRefs = "timeslotRange")
@@ -26,11 +28,10 @@ public class Lesson {
     @PlanningVariable(valueRangeProviderRefs = "roomRange")
     private Room room;
 
-    public Lesson(Long id, TeachingUnit teachingUnit, SchoolClass schoolClass, Teacher teacher) {
+    public Lesson(Long id, TeachingUnit teachingUnit, SchoolClass schoolClass) {
         this.id = id;
         this.teachingUnit = teachingUnit;
         this.schoolClass = schoolClass;
-        this.teacher = teacher;
     }
 
     public boolean isValidRoom() {

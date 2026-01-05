@@ -1,10 +1,7 @@
 package com.schoolplanner.timetable.solver;
 
 import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
-import ai.timefold.solver.core.api.score.stream.Constraint;
-import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
-import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
-import ai.timefold.solver.core.api.score.stream.Joiners;
+import ai.timefold.solver.core.api.score.stream.*;
 import com.schoolplanner.timetable.domain.Lesson;
 import com.schoolplanner.timetable.domain.SchoolClass;
 
@@ -24,6 +21,8 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 qualifiedUnitMatch(constraintFactory),
                 teacherAvailability(constraintFactory),
                 schoolGroupLunchConflict(constraintFactory),
+                maxTwoLessonsPerDay(constraintFactory),
+                maxOneTeacherPerSchoolClassPerUnit(constraintFactory),
 
                 // Soft Constraints
                 teacherRoomStability(constraintFactory)
@@ -86,6 +85,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     private Constraint teacherAvailability(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getTimeSlot() != null)
+                .filter(lesson -> lesson.getTeacher() != null)
                 .filter(lesson -> !lesson.getTeacher().getWorkTimeSlots().contains(lesson.getTimeSlot()))
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Teacher must be available at the assigned time slot");
@@ -103,6 +103,34 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 })
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Student group cannot have lesson during their lunch");
+    }
+    // Ne vairāk kā 2 viena veida stundas dienā
+    private Constraint maxTwoLessonsPerDay(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Lesson.class)
+                .filter(lesson -> lesson.getTimeSlot() != null)
+                .groupBy(
+                        Lesson::getSchoolClass,
+                        Lesson::getTeachingUnit,
+                        lesson -> lesson.getTimeSlot().getSchoolDay(),
+                        ConstraintCollectors.count()
+                )
+                .filter((schoolClass, teachingUnit, day, count) -> count > 2)
+                .penalize(HardSoftScore.ONE_HARD, (schoolClass, teachingUnit, day, count) -> count - 2)
+                .asConstraint("Max 2 lessons of same unit per day");
+    }
+
+    // Vienu priekšmetu vienmēr pasniedz viens un tas pats skolotājs
+    private Constraint maxOneTeacherPerSchoolClassPerUnit(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Lesson.class)
+                .filter(lesson -> lesson.getTeacher() != null)
+                .groupBy(
+                        Lesson::getSchoolClass,
+                        Lesson::getTeachingUnit,
+                        ConstraintCollectors.countDistinct(Lesson::getTeacher)
+                )
+                .filter((schoolClass, teachingUnit, distinctTeacherCount) -> distinctTeacherCount > 1)
+                .penalize(HardSoftScore.ONE_HARD, (schoolClass, teachingUnit, distinctTeacherCount) -> distinctTeacherCount - 1)
+                .asConstraint("One teacher per unit per class");
     }
 
     // Skolotājam vēlas pasniegt stundu savā klasē

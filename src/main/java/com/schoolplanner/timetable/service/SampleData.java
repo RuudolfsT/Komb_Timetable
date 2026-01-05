@@ -63,13 +63,13 @@ public class SampleData {
 
         List<Lesson> lessons = new ArrayList<>();
 
-        lessons.add(new Lesson(101L, math7, class7A, anna));
+        lessons.add(new Lesson(101L, math7, class7A));
 
-        lessons.add(new Lesson(102L, math7, class7A, anna));
+        lessons.add(new Lesson(102L, math7, class7A));
 
-        lessons.add(new Lesson(103L, chem8, class8B, janis));
+        lessons.add(new Lesson(103L, chem8, class8B));
 
-        lessons.add(new Lesson(104L, sport7, class7A, peteris));
+        lessons.add(new Lesson(104L, sport7, class7A));
 
         return new TimeTable(
                 allTimeSlots,

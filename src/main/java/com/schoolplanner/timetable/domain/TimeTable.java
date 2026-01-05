@@ -29,6 +29,7 @@ public class TimeTable {
     private List<Room> rooms;
 
     @ProblemFactCollectionProperty
+    @ValueRangeProvider(id = "teacherRange")
     private List<Teacher> teachers;
 
     @ProblemFactCollectionProperty
