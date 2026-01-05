@@ -4,18 +4,23 @@ import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
+import ai.timefold.solver.core.api.score.stream.Joiners;
 import com.schoolplanner.timetable.domain.Lesson;
-
-import static ai.timefold.solver.core.api.score.stream.Joiners.*;
-import static ai.timefold.solver.core.api.score.stream.ConstraintCollectors.*;
-
 
 public class TimeTableConstraintProvider implements ConstraintProvider {
 
     @Override
     public Constraint[] defineConstraints(ConstraintFactory constraintFactory) {
         return new Constraint[]{
-            teacherConflict(constraintFactory),
+                // Hard Constraints
+                teacherConflict(constraintFactory),
+                roomConflict(constraintFactory),
+                studentGroupConflict(constraintFactory),
+                roomTypeMatch(constraintFactory),
+                teacherAvailability(constraintFactory),
+
+                // Soft Constraints
+                teacherRoomStability(constraintFactory)
         };
     }
 
@@ -23,10 +28,60 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     private Constraint teacherConflict(ConstraintFactory constraintFactory) {
         return constraintFactory.forEachUniquePair(
                         Lesson.class,
-                        equal(Lesson::getTeacher),
-                        equal(Lesson::getTimeSlot)
+                        Joiners.equal(Lesson::getTeacher),
+                        Joiners.equal(Lesson::getTimeSlot)
                 )
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Teacher cannot teach two lessons at the same time");
+    }
+
+    // Telpā nevar notikt divas stundas vienlaicīgi
+    private Constraint roomConflict(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEachUniquePair(
+                        Lesson.class,
+                        Joiners.equal(Lesson::getRoom),
+                        Joiners.equal(Lesson::getTimeSlot)
+                )
+                .penalize(HardSoftScore.ONE_HARD)
+                .asConstraint("A room cannot host two lessons at the same time.");
+    }
+
+    // Stundentu grupa nevar apmeklēt divas stundas vienlaicīgi
+    private Constraint studentGroupConflict(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEachUniquePair(
+                        Lesson.class,
+                        Joiners.equal(Lesson::getSchoolClass),
+                        Joiners.equal(Lesson::getTimeSlot)
+                )
+                .penalize(HardSoftScore.ONE_HARD)
+                .asConstraint("A student group cannot attend two lessons at the same time");
+    }
+
+    // Telpai jāatbilst nepieciešamajam telpas tipam
+    private Constraint roomTypeMatch(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Lesson.class)
+                .filter(lesson -> lesson.getRoom() != null) // Skip if room not assigned yet
+                .filter(lesson -> lesson.getTeachingUnit().getRoomType() != lesson.getRoom().getRoomType())
+                .penalize(HardSoftScore.ONE_HARD)
+                .asConstraint("The assigned room must match the required RoomType");
+    }
+
+    // Skolotājam jābūt pieejamam
+    private Constraint teacherAvailability(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Lesson.class)
+                .filter(lesson -> lesson.getTimeSlot() != null)
+                .filter(lesson -> !lesson.getTeacher().getWorkTimeSlots().contains(lesson.getTimeSlot()))
+                .penalize(HardSoftScore.ONE_HARD)
+                .asConstraint("Teacher must be available at the assigned time slot");
+    }
+
+    // Skolotājam jāpasniedz stunda ne savā klasē
+    private Constraint teacherRoomStability(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Lesson.class)
+                .filter(lesson -> lesson.getRoom() != null)
+                .filter(lesson -> lesson.getTeacher().getHomeRoom() != null)
+                .filter(lesson -> !lesson.getRoom().getId().equals(lesson.getTeacher().getHomeRoom().getId()))
+                .penalize(HardSoftScore.ONE_SOFT)
+                .asConstraint("Teachers prefer to teach in their registered \"Home Room\"");
     }
 }
