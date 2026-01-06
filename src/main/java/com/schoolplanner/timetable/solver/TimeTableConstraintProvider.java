@@ -6,6 +6,8 @@ import com.schoolplanner.timetable.domain.Lesson;
 import com.schoolplanner.timetable.domain.SchoolClass;
 
 import java.time.LocalTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 
 public class TimeTableConstraintProvider implements ConstraintProvider {
@@ -140,6 +142,45 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 .filter(lesson -> lesson.getTeacher().getHomeRoom() != null)
                 .filter(lesson -> !lesson.getRoom().getId().equals(lesson.getTeacher().getHomeRoom().getId()))
                 .penalize(HardSoftScore.ONE_SOFT)
-                .asConstraint("Teachers prefer to teach in their registered \"Home Room\"");
+                .asConstraint("Teachers prefer to teach in their Home Room");
+    }
+
+    // Skolēni nevēlas brīvas starpstundas
+    Constraint studentGaps(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Lesson.class)
+                .filter(lesson -> lesson.getTimeSlot() != null)
+                .groupBy(Lesson::getSchoolClass,
+                        lesson -> lesson.getTimeSlot().getSchoolDay(),
+                        ConstraintCollectors.toList(lesson -> lesson.getTimeSlot().getId()))
+                .penalize(HardSoftScore.ONE_SOFT,
+                        (schoolClass, day, slotIds) -> {
+                            return calculateGaps(slotIds);
+                        })
+                .asConstraint("Student gaps per day");
+    }
+
+    // Skolotāji nevēlas brīvas starpstundas
+    Constraint teacherGaps(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Lesson.class)
+                .filter(lesson -> lesson.getTimeSlot() != null)
+                .groupBy(Lesson::getTeacher,
+                        lesson -> lesson.getTimeSlot().getSchoolDay(),
+                        ConstraintCollectors.toList(lesson -> lesson.getTimeSlot().getId()))
+                .penalize(HardSoftScore.ONE_SOFT,
+                        (teacher, day, slotIds) -> {
+                            return calculateGaps(slotIds);
+                        })
+                .asConstraint("Teacher gaps per day");
+    }
+
+    //---------
+    // helper functions
+    //---------
+    private int calculateGaps(List<Long> slotIds) {
+        if (slotIds.isEmpty()) return 0;
+        long firstSlot = Collections.min(slotIds);
+        long lastSlot = Collections.max(slotIds);
+        long span = lastSlot - firstSlot + 1;
+        return (int) (span - slotIds.size());
     }
 }

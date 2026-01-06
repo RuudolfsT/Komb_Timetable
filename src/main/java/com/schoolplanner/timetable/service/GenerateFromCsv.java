@@ -42,16 +42,24 @@ public class GenerateFromCsv {
                 int grade = (int) Double.parseDouble(gradeStr);
 
                 LocalTime lunchStart = (grade <= 6) ? LocalTime.of(11, 0) : LocalTime.of(12, 0);
-                LocalTime lunchEnd = lunchStart.plusMinutes(45);
+                LocalTime lunchEnd = lunchStart.plusMinutes(40);
                 TimeRange lunchTime = new TimeRange(lunchStart, lunchEnd);
 
-                SchoolClass schoolClass = new SchoolClass(
+                SchoolClass schoolClassA = new SchoolClass(
                         ++classIdCounter,
                         grade + "A",
                         grade,
                         lunchTime
                 );
-                schoolClasses.add(schoolClass);
+//                SchoolClass schoolClassB = new SchoolClass(
+//                        ++classIdCounter,
+//                        grade + "B",
+//                        grade,
+//                        lunchTime
+//                );
+
+                schoolClasses.add(schoolClassA);
+//                schoolClasses.add(schoolClassB);
 
                 for (int i = 1; i < columns.length; i++) {
                     if (i >= headers.length) break;
@@ -81,7 +89,8 @@ public class GenerateFromCsv {
                     }
 
                     for (int k = 0; k < count; k++) {
-                        lessons.add(new Lesson(++lessonIdCounter, unit, schoolClass));
+                        lessons.add(new Lesson(++lessonIdCounter, unit, schoolClassA));
+//                        lessons.add(new Lesson(++lessonIdCounter, unit, schoolClassB));
                     }
                 }
             }
@@ -106,12 +115,10 @@ public class GenerateFromCsv {
     private static RoomType getRoomTypeForSubject(Subject s) {
         return switch (s) {
             case SPORT -> RoomType.GYM;
-            case CHEMISTRY -> RoomType.CHEMISTRY_LAB;
+            case CHEMISTRY, BIOLOGY -> RoomType.CHEMISTRY_LAB;
             case PHYSICS -> RoomType.PHYSICS_LAB;
-            case BIOLOGY -> RoomType.CHEMISTRY_LAB;
             case MUSIC -> RoomType.MUSIC;
             case COMPUTER -> RoomType.COMPUTER_LAB;
-            case ART, DESIGN_AND_TECHNOLOGY -> RoomType.NORMAL;
             default -> RoomType.NORMAL;
         };
     }
