@@ -41,12 +41,14 @@ public class TimeTableController {
     }
 
     @GetMapping("/solve-csv")
-    public ResponseEntity<TimeTable> solveCsv() {
+    public ResponseEntity<TimeTableResponse> solveCsv() {
         try {
             TimeTable problem = GenerateFromCsv.generateFromCsv("src/main/java/com/schoolplanner/timetable/service/lesson_list.csv");
             TimeTable solution = timeTableService.solve(problem);
-            return ResponseEntity.ok(solution);
-        } catch (ExecutionException | InterruptedException e) {
+            var explanation = timeTableService.getSolutionManager().explain(solution);
+            TimeTableResponse response = new TimeTableResponse(solution, explanation);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
     }

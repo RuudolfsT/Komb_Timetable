@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public class GenerateFromCsv {
@@ -189,8 +190,8 @@ public class GenerateFromCsv {
             t.setId("T" + i);
             t.setFirstName("Teacher");
             t.setLastName(String.valueOf(i));
-            t.setWorkTimeSlots(new ArrayList<>(allSlots));
-            t.setQualifiedUnits(new ArrayList<>(allUnits));
+            t.setWorkTimeSlots(new HashSet<>(allSlots));
+            t.setQualifiedUnits(new HashSet<>(allUnits));
             t.setHomeRoom(allRooms.get(0));
 
             teachers.add(t);

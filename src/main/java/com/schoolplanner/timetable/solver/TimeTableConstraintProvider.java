@@ -23,11 +23,14 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 qualifiedUnitMatch(constraintFactory),
                 teacherAvailability(constraintFactory),
                 schoolGroupLunchConflict(constraintFactory),
-                maxTwoLessonsPerDay(constraintFactory),
+                dailyLessonCountLimit(constraintFactory),
                 maxOneTeacherPerSchoolClassPerUnit(constraintFactory),
+                subjectMustBeConsecutive(constraintFactory),
 
                 // Soft Constraints
-                teacherRoomStability(constraintFactory)
+                teacherRoomStability(constraintFactory),
+                studentGaps(constraintFactory),
+                teacherGaps(constraintFactory)
         };
     }
 
@@ -97,28 +100,51 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     private Constraint schoolGroupLunchConflict(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getTimeSlot() != null)
-                .join(SchoolClass.class, Joiners.equal(Lesson::getSchoolClass, Function.identity()))
-                .filter((lesson, schoolClass) -> {
+                .filter(lesson -> {
                     LocalTime lessonStart = lesson.getTimeSlot().getStartTime();
-                    LocalTime lunchStart = schoolClass.getLunchTime().start();
+                    LocalTime lunchStart = lesson.getSchoolClass().getLunchTime().start();
                     return lessonStart.equals(lunchStart);
                 })
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Student group cannot have lesson during their lunch");
     }
-    // Ne vairāk kā 2 viena veida stundas dienā
-    private Constraint maxTwoLessonsPerDay(ConstraintFactory constraintFactory) {
+
+    // Priekšmeta stundu skaits nedrīkst pārsniegt dienas limitu
+    private Constraint dailyLessonCountLimit(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getTimeSlot() != null)
                 .groupBy(
                         Lesson::getSchoolClass,
-                        Lesson::getTeachingUnit,
+                        lesson -> lesson.getTeachingUnit().getSubject(),
                         lesson -> lesson.getTimeSlot().getSchoolDay(),
                         ConstraintCollectors.count()
                 )
-                .filter((schoolClass, teachingUnit, day, count) -> count > 2)
-                .penalize(HardSoftScore.ONE_HARD, (schoolClass, teachingUnit, day, count) -> count - 2)
-                .asConstraint("Max 2 lessons of same unit per day");
+                .filter((schoolClass, subject, day, count) -> {
+                    int limit = subject.isAllowMultiplePerDay() ? 2 : 1;
+                    return count > limit;
+                })
+                .penalize(HardSoftScore.ONE_HARD,
+                        (schoolClass, subject, day, count) -> {
+                            int limit = subject.isAllowMultiplePerDay() ? 2 : 1;
+                            return count - limit;
+                        })
+                .asConstraint("Daily lesson count limit exceeded");
+    }
+
+    // Noteiktiem priekšmetiem jānotiek 2 stundām pēc kārtas
+    private Constraint subjectMustBeConsecutive(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Lesson.class)
+                .filter(lesson -> lesson.getTimeSlot() != null)
+                .filter(lesson -> lesson.getTeachingUnit().getSubject().isMustBeConsecutive())
+                .groupBy(Lesson::getSchoolClass,
+                        lesson -> lesson.getTeachingUnit().getSubject(),
+                        lesson -> lesson.getTimeSlot().getSchoolDay(),
+                        ConstraintCollectors.toList(lesson -> lesson.getTimeSlot().getId()))
+                .penalize(HardSoftScore.ONE_HARD,
+                        (schoolClass, subject, day, slotIds) -> {
+                            return calculateNonConsecutivePenalty((List<Long>) slotIds);
+                        })
+                .asConstraint("Subject must be consecutive");
     }
 
     // Vienu priekšmetu vienmēr pasniedz viens un tas pats skolotājs
@@ -146,7 +172,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Skolēni nevēlas brīvas starpstundas
-    Constraint studentGaps(ConstraintFactory constraintFactory) {
+    private Constraint studentGaps(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getTimeSlot() != null)
                 .groupBy(Lesson::getSchoolClass,
@@ -160,7 +186,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Skolotāji nevēlas brīvas starpstundas
-    Constraint teacherGaps(ConstraintFactory constraintFactory) {
+    private Constraint teacherGaps(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getTimeSlot() != null)
                 .groupBy(Lesson::getTeacher,
@@ -181,6 +207,26 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
         long firstSlot = Collections.min(slotIds);
         long lastSlot = Collections.max(slotIds);
         long span = lastSlot - firstSlot + 1;
-        return (int) (span - slotIds.size());
+        long distinctSlotCount = slotIds.stream().distinct().count();
+        return Math.max(0, (int) (span - distinctSlotCount));
+    }
+
+    private int calculateNonConsecutivePenalty(List<Long> slotIds) {
+        if (slotIds.size() < 2) {
+            return 0;
+        }
+
+        Collections.sort(slotIds);
+
+        int penalty = 0;
+        for (int i = 0; i < slotIds.size() - 1; i++) {
+            long current = slotIds.get(i);
+            long next = slotIds.get(i + 1);
+
+            if (next - current > 1) {
+                penalty++;
+            }
+        }
+        return penalty;
     }
 }

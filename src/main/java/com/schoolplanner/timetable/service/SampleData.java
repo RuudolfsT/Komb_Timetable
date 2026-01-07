@@ -4,9 +4,7 @@ import com.schoolplanner.timetable.domain.*;
 import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
 
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SampleData {
 
@@ -41,23 +39,23 @@ public class SampleData {
         anna.setId("T1");
         anna.setFirstName("Anna");
         anna.setLastName("Ozola");
-        anna.setQualifiedUnits(List.of(math7, chem8));
-        anna.setWorkTimeSlots(allTimeSlots);
+        anna.setQualifiedUnits(Set.of(math7, chem8));
+        anna.setWorkTimeSlots(new HashSet<>(allTimeSlots));
         anna.setHomeRoom(room101);
 
         Teacher janis = new Teacher();
         janis.setId("T2");
         janis.setFirstName("Jānis");
         janis.setLastName("Bērziņš");
-        janis.setQualifiedUnits(List.of(chem8, sport7));
-        janis.setWorkTimeSlots(allTimeSlots);
+        janis.setQualifiedUnits(Set.of(chem8, sport7));
+        janis.setWorkTimeSlots(new HashSet<>(allTimeSlots));
 
         Teacher peteris = new Teacher();
         peteris.setId("T3");
         peteris.setFirstName("Pēteris");
         peteris.setLastName("Kļaviņš");
-        peteris.setQualifiedUnits(List.of(math7, chem8, sport7));
-        peteris.setWorkTimeSlots(List.of(slot2_Mon_1000, slot3_Mon_1100, slot3_Mon_1300));
+        peteris.setQualifiedUnits(Set.of(math7, chem8, sport7));
+        peteris.setWorkTimeSlots(new HashSet<>(Set.of(slot2_Mon_1000, slot3_Mon_1100, slot3_Mon_1300)));
 
         List<Teacher> allTeachers = List.of(anna, janis, peteris);
 
