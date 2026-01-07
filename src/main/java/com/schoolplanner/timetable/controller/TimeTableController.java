@@ -1,72 +1,99 @@
 package com.schoolplanner.timetable.controller;
 
-import ai.timefold.solver.core.api.score.ScoreExplanation;
-import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
+import com.schoolplanner.timetable.controller.dto.SolveJob;
+import com.schoolplanner.timetable.controller.dto.SolveStatus;
 import com.schoolplanner.timetable.controller.dto.TimeTableResponse;
 import com.schoolplanner.timetable.domain.TimeTable;
+import com.schoolplanner.timetable.service.AsyncSolveService;
 import com.schoolplanner.timetable.service.GenerateFromCsv;
 import com.schoolplanner.timetable.service.SampleData;
 import com.schoolplanner.timetable.service.TimeTableService;
-import io.micrometer.core.instrument.Timer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.concurrent.ExecutionException;
-
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/timetable")
 public class TimeTableController {
 
+    private final AsyncSolveService asyncSolveService;
     private final TimeTableService timeTableService;
 
-    public TimeTableController(TimeTableService timeTableService) {
+    public TimeTableController(
+            AsyncSolveService asyncSolveService,
+            TimeTableService timeTableService
+    ) {
+        this.asyncSolveService = asyncSolveService;
         this.timeTableService = timeTableService;
     }
 
-    @GetMapping("/test")
-    public ResponseEntity<String> getSample() {
-        return ResponseEntity.ok("Testing OK ! :D");
+    // Nosūtīt problēmu JSON formātā
+    @PostMapping("/jobs")
+    public ResponseEntity<Map<String, String>> submitJsonProblem(
+            @RequestBody TimeTable problem
+    ) {
+        String jobId = asyncSolveService.submit(problem);
+        return ResponseEntity.accepted().body(Map.of("jobId", jobId));
     }
 
-    @GetMapping("/solve-sample")
-    public ResponseEntity<TimeTable> solveSample() {
-        try {
-            TimeTable problem = SampleData.smallDemo();
-            TimeTable solution = timeTableService.solve(problem);
-            return ResponseEntity.ok(solution);
-        } catch (ExecutionException | InterruptedException e) {
-            return ResponseEntity.internalServerError().build();
-        }
+    // Nosūta problēmu no csv
+    @PostMapping("/jobs/from-csv")
+    public ResponseEntity<Map<String, String>> submitCsvProblem() {
+        TimeTable problem = GenerateFromCsv.generateFromCsv("src/main/java/com/schoolplanner/timetable/service/lesson_list.csv");
+        String jobId = asyncSolveService.submit(problem);
+        return ResponseEntity.accepted().body(Map.of("jobId", jobId));
     }
 
-    @GetMapping("/solve-csv")
-    public ResponseEntity<TimeTableResponse> solveCsv() {
-        try {
-            TimeTable problem = GenerateFromCsv.generateFromCsv("src/main/java/com/schoolplanner/timetable/service/lesson_list.csv");
-            TimeTable solution = timeTableService.solve(problem);
-            var explanation = timeTableService.getSolutionManager().explain(solution);
-            TimeTableResponse response = new TimeTableResponse(solution, explanation);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+    // Izgūst risinājuma statusu
+    @GetMapping("/jobs/{jobId}")
+    public ResponseEntity<Map<String, Object>> getJobStatus(
+            @PathVariable String jobId
+    ) {
+        SolveJob job = asyncSolveService.getJob(jobId);
+        if (job == null) {
+            return ResponseEntity.notFound().build();
         }
+
+        return ResponseEntity.ok(Map.of("jobId", job.getJobId(), "status", job.getStatus()));
     }
 
-    @GetMapping("/solve-sample-visualized")
-    public ResponseEntity<TimeTableResponse> solveSampleVisualized() {
-        try {
-            TimeTable problem = SampleData.smallDemo();
-            TimeTable solution = timeTableService.solve(problem);
-
-            var explanation = timeTableService.getSolutionManager().explain(solution);
-
-            TimeTableResponse response = new TimeTableResponse(solution, explanation);
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+    // Risinājuma rezultāta iegūšana
+    @GetMapping("/jobs/{jobId}/solution")
+    public ResponseEntity<TimeTableResponse> getSolution(
+            @PathVariable String jobId
+    ) {
+        SolveJob job = asyncSolveService.getJob(jobId);
+        if (job == null) {
+            return ResponseEntity.notFound().build();
         }
+
+        if (job.getStatus() != SolveStatus.COMPLETED) {
+            return ResponseEntity.status(409)
+                    .body(null);
+        }
+
+        TimeTable solution = job.getSolution();
+        var explanation = timeTableService.getSolutionManager().explain(solution);
+
+        return ResponseEntity.ok(new TimeTableResponse(solution, explanation));
+    }
+
+    // Atgriež visus risinājumu statusus
+    @GetMapping("/alljobs")
+    public ResponseEntity<Map<String, Object>> getAllJobStatuses(
+    ) {
+        var jobs = asyncSolveService.getJobs();
+        if (jobs == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        for (SolveJob job : jobs.values()) {
+            result.put(job.getJobId(), job.getStatus().toString());
+        }
+
+        return ResponseEntity.ok(result);
     }
 }
