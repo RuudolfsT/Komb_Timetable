@@ -33,6 +33,9 @@ public class TimeTable {
     private List<Teacher> teachers;
 
     @ProblemFactCollectionProperty
+    private List<LunchGroup> lunchGroups;
+
+    @ProblemFactCollectionProperty
     private List<SchoolClass> schoolClasses;
 
     @PlanningEntityCollectionProperty

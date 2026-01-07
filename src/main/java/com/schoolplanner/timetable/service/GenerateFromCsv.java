@@ -16,7 +16,7 @@ public class GenerateFromCsv {
     public static TimeTable generateFromCsv(String csvFilePath) {
         List<TimeSlot> timeSlots = generateTimeSlots();
         List<Room> rooms = generateRooms();
-
+        List<LunchGroup> lunchGroups = generateLunchGroups(timeSlots);
         List<SchoolClass> schoolClasses = new ArrayList<>();
         List<Lesson> lessons = new ArrayList<>();
 
@@ -42,15 +42,15 @@ public class GenerateFromCsv {
 
                 int grade = (int) Double.parseDouble(gradeStr);
 
-                LocalTime lunchStart = (grade <= 6) ? LocalTime.of(11, 0) : LocalTime.of(12, 0);
-                LocalTime lunchEnd = lunchStart.plusMinutes(40);
-                TimeRange lunchTime = new TimeRange(lunchStart, lunchEnd);
+//                LocalTime lunchStart = (grade <= 6) ? LocalTime.of(11, 0) : LocalTime.of(12, 0);
+//                LocalTime lunchEnd = lunchStart.plusMinutes(40);
+//                TimeRange lunchTime = new TimeRange(lunchStart, lunchEnd);
+
 
                 SchoolClass schoolClassA = new SchoolClass(
                         ++classIdCounter,
                         grade + "A",
-                        grade,
-                        lunchTime
+                        grade
                 );
 //                SchoolClass schoolClassB = new SchoolClass(
 //                        ++classIdCounter,
@@ -107,6 +107,7 @@ public class GenerateFromCsv {
                 timeSlots,
                 rooms,
                 teachers,
+                lunchGroups,
                 schoolClasses,
                 lessons,
                 HardSoftScore.ZERO
@@ -145,6 +146,31 @@ public class GenerateFromCsv {
             }
         }
         return slots;
+    }
+
+    private static List<LunchGroup> generateLunchGroups(List<TimeSlot> timeSlots) {
+        List<TimeSlot> lunchSlots1to6 = new ArrayList<>();
+        List<TimeSlot> lunchSlots7to12 = new ArrayList<>();
+
+        for (TimeSlot slot : timeSlots) {
+            LocalTime start = slot.getStartTime();
+            LocalTime end = slot.getEndTime();
+
+            // 1–6 klašu pusdienas: 11:45–13:00 (katru dienu)
+            if (start.isBefore(LocalTime.of(13, 0)) && end.isAfter(LocalTime.of(11, 45))) {
+                lunchSlots1to6.add(slot);
+            }
+
+            // 7–12 klašu pusdienas: 12:45–14:00 (katru dienu)
+            if (start.isBefore(LocalTime.of(14, 0)) && end.isAfter(LocalTime.of(12, 45))) {
+                lunchSlots7to12.add(slot);
+            }
+        }
+
+        return List.of(
+                new LunchGroup("Grades 1–6 lunch", 1, 6, lunchSlots1to6),
+                new LunchGroup("Grades 7–12 lunch", 7, 12, lunchSlots7to12)
+        );
     }
 
     private static List<Room> generateRooms() {

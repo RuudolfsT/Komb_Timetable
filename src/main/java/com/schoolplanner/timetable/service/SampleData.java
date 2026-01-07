@@ -26,8 +26,23 @@ public class SampleData {
 
         List<Room> allRooms = List.of(room101, room102, chemLab, gym);
 
-        SchoolClass class7A = new SchoolClass(1L, "7A", 7, new TimeRange(LocalTime.of(12, 0), LocalTime.of(12, 45)));
-        SchoolClass class8B = new SchoolClass(2L, "8B", 8, new TimeRange(LocalTime.of(12, 0), LocalTime.of(12, 45)));
+        SchoolClass class7A = new SchoolClass(1L, "7A", 7);
+        SchoolClass class8B = new SchoolClass(2L, "8B", 8);
+
+        LunchGroup lunchGroup1 = new LunchGroup(
+                "Grades 1–6 lunch",
+                1,
+                6,
+                List.of(slot3_Mon_1100)
+        );
+
+        LunchGroup lunchGroup2 = new LunchGroup(
+                "Grades 7–12 lunch",
+                7,
+                12,
+                List.of(slot3_Mon_1200)
+        );
+        List<LunchGroup> allLunchGroups = List.of(lunchGroup1, lunchGroup2);
 
         TeachingUnit math7 = new TeachingUnit(Subject.MATH, 7, RoomType.NORMAL);
         TeachingUnit chem8 = new TeachingUnit(Subject.CHEMISTRY, 8, RoomType.CHEMISTRY_LAB);
@@ -73,6 +88,7 @@ public class SampleData {
                 allTimeSlots,
                 allRooms,
                 allTeachers,
+                allLunchGroups,
                 allClasses,
                 lessons,
                 HardSoftScore.ZERO

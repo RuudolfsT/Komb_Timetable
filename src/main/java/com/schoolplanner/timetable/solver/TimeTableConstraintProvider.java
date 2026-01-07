@@ -3,6 +3,7 @@ package com.schoolplanner.timetable.solver;
 import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
 import ai.timefold.solver.core.api.score.stream.*;
 import com.schoolplanner.timetable.domain.Lesson;
+import com.schoolplanner.timetable.domain.LunchGroup;
 import com.schoolplanner.timetable.domain.SchoolClass;
 
 import java.time.LocalTime;
@@ -22,7 +23,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 roomTypeMatch(constraintFactory),
                 qualifiedUnitMatch(constraintFactory),
                 teacherAvailability(constraintFactory),
-                schoolGroupLunchConflict(constraintFactory),
+                lunchGroupConstraint(constraintFactory),
                 dailyLessonCountLimit(constraintFactory),
                 maxOneTeacherPerSchoolClassPerUnit(constraintFactory),
                 subjectMustBeConsecutive(constraintFactory),
@@ -97,17 +98,17 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Katrai klasei ir savs pusdienu laiks, kurā nedrīkst būt stundas
-    private Constraint schoolGroupLunchConflict(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(Lesson.class)
-                .filter(lesson -> lesson.getTimeSlot() != null)
-                .filter(lesson -> {
-                    LocalTime lessonStart = lesson.getTimeSlot().getStartTime();
-                    LocalTime lunchStart = lesson.getSchoolClass().getLunchTime().start();
-                    return lessonStart.equals(lunchStart);
-                })
-                .penalize(HardSoftScore.ONE_HARD)
-                .asConstraint("Student group cannot have lesson during their lunch");
-    }
+//    private Constraint schoolGroupLunchConflict(ConstraintFactory constraintFactory) {
+//        return constraintFactory.forEach(Lesson.class)
+//                .filter(lesson -> lesson.getTimeSlot() != null)
+//                .filter(lesson -> {
+//                    LocalTime lessonStart = lesson.getTimeSlot().getStartTime();
+//                    LocalTime lunchStart = lesson.getSchoolClass().getLunchTime().start();
+//                    return lessonStart.equals(lunchStart);
+//                })
+//                .penalize(HardSoftScore.ONE_HARD)
+//                .asConstraint("Student group cannot have lesson during their lunch");
+//    }
 
     // Priekšmeta stundu skaits nedrīkst pārsniegt dienas limitu
     private Constraint dailyLessonCountLimit(ConstraintFactory constraintFactory) {
@@ -199,9 +200,25 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 .asConstraint("Teacher gaps per day");
     }
 
-    //---------
+    // Katrai klasei ir savs pusdienu laiks, kurā nedrīkst būt stundas
+    private Constraint lunchGroupConstraint(ConstraintFactory factory) {
+        return factory.forEach(Lesson.class)
+                .join(LunchGroup.class,
+                        Joiners.filtering((lesson, group) ->
+                                group.appliesToGrade(
+                                        lesson.getSchoolClass().getGrade()
+                                )
+                        )
+                )
+                .filter((lesson, group) ->
+                        group.getLunchTimeSlots()
+                                .contains(lesson.getTimeSlot())
+                )
+                .penalize(HardSoftScore.ONE_HARD)
+                .asConstraint("Lessons cannot overlap lunch");
+    }
+
     // helper functions
-    //---------
     private int calculateGaps(List<Long> slotIds) {
         if (slotIds.isEmpty()) return 0;
         long firstSlot = Collections.min(slotIds);
