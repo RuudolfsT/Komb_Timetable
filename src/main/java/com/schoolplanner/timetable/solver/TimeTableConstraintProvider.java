@@ -31,7 +31,8 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 // Soft Constraints
                 teacherRoomStability(constraintFactory),
                 studentGaps(constraintFactory),
-                teacherGaps(constraintFactory)
+                teacherGaps(constraintFactory),
+                evenlySpreadLessonsAndLessBefore(constraintFactory)
         };
     }
 
@@ -218,6 +219,21 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 .asConstraint("Lessons cannot overlap lunch");
     }
 
+    // Skolēni vēlas pēc iespējas īsāku dienu
+    private Constraint evenlySpreadLessonsAndLessBefore(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Lesson.class)
+                .filter(lesson -> lesson.getTimeSlot() != null)
+                .groupBy(Lesson::getSchoolClass,
+                        lesson -> lesson.getTimeSlot().getSchoolDay(),
+                        ConstraintCollectors.toList(lesson -> lesson.getTimeSlot().getId()))
+                .penalize(HardSoftScore.ONE_SOFT,
+                        (schoolClass, day, slotIds) -> {
+                            int lengthPenalty = dayLengthPenalty(slotIds);
+                            return lengthPenalty * lengthPenalty;
+                        })
+                .asConstraint("Evenly spread lessons per day");
+    }
+
     // helper functions
     private int calculateGaps(List<Long> slotIds) {
         if (slotIds.isEmpty()) return 0;
@@ -245,5 +261,16 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
             }
         }
         return penalty;
+    }
+
+    private int dayLengthPenalty(List<Long> slotIds) {
+        if (slotIds.isEmpty()) return 0;
+        Long maxAbsoluteId = Collections.max(slotIds);
+        long normalizedId = ((maxAbsoluteId - 1) % 10) - 6;
+        if (normalizedId > 0) {
+            return (int) normalizedId;
+        } else {
+            return 0;
+        }
     }
 }

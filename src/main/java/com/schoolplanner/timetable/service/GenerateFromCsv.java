@@ -138,19 +138,21 @@ public class GenerateFromCsv {
         long id = 0;
         SchoolDay[] days = SchoolDay.values();
         LocalTime[] startTimes = {
-                LocalTime.of(9, 0),
-                LocalTime.of(10, 0),
+                LocalTime.of(8, 30),
+                LocalTime.of(9, 20),
+                LocalTime.of(10, 10),
                 LocalTime.of(11, 0),
-                LocalTime.of(12, 0),
-                LocalTime.of(13, 0),
-                LocalTime.of(14, 0),
-                LocalTime.of(15, 0),
-                LocalTime.of(16, 0)
+                LocalTime.of(11, 50),
+                LocalTime.of(12, 40),
+                LocalTime.of(13, 30),
+                LocalTime.of(14, 20),
+                LocalTime.of(15, 10),
+                LocalTime.of(16, 0),
         };
 
         for (SchoolDay day : days) {
             for (LocalTime start : startTimes) {
-                slots.add(new TimeSlot(++id, day, start, start.plusMinutes(45)));
+                slots.add(new TimeSlot(++id, day, start, start.plusMinutes(40)));
             }
         }
         return slots;
@@ -164,13 +166,13 @@ public class GenerateFromCsv {
             LocalTime start = slot.getStartTime();
             LocalTime end = slot.getEndTime();
 
-            // 1–6 klašu pusdienas: 11:45–13:00 (katru dienu)
-            if (start.isBefore(LocalTime.of(13, 0)) && end.isAfter(LocalTime.of(11, 45))) {
+            // 1–6 klašu pusdienas: 10:10–11:50 (katru dienu)
+            if (start.isBefore(LocalTime.of(11, 50)) && end.isAfter(LocalTime.of(10, 10))) {
                 lunchSlots1to6.add(slot);
             }
 
-            // 7–12 klašu pusdienas: 12:45–14:00 (katru dienu)
-            if (start.isBefore(LocalTime.of(14, 0)) && end.isAfter(LocalTime.of(12, 45))) {
+            // 7–12 klašu pusdienas: 11:00–12:40 (katru dienu)
+            if (start.isBefore(LocalTime.of(12, 40)) && end.isAfter(LocalTime.of(11, 0))) {
                 lunchSlots7to12.add(slot);
             }
         }
