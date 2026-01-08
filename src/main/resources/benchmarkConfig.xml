@@ -19,10 +19,16 @@
             </scoreDirectorFactory>
 
             <termination>
-                <secondsSpentLimit>10</secondsSpentLimit>
+                <secondsSpentLimit>30</secondsSpentLimit>
             </termination>
         </solver>
     </inheritedSolverBenchmark>
+    <solverBenchmark>
+        <name>Timefold Default (Baseline)</name>
+        <solver>
+            <solverConfigFile>solverConfig.xml</solverConfigFile>
+        </solver>
+    </solverBenchmark>
 
     <solverBenchmark>
         <name>FIRST_FIT_TABU</name>
