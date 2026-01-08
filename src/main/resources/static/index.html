@@ -54,12 +54,46 @@
 
         .score-section { background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 20px; display: none; }
         .score-title { font-weight: 700; margin-bottom: 8px; }
-        .score-values { display: flex; gap: 20px; flex-wrap: wrap; }
+        .score-values { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
         .score-item { min-width: 120px; }
         .score-label { color: #555; font-size: 0.9em; }
         .score-value { font-size: 1.2em; }
         .score-value.hard-positive { color: #2f8a2f; }
         .score-value.hard-negative { color: #c33; }
+        .constraint-matches { margin-top: 16px; }
+        .constraint-group { margin-bottom: 16px; }
+        .constraint-group-title { font-weight: 600; margin-bottom: 8px; color: #333; font-size: 0.95em; }
+        .constraint-group-header { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            margin-bottom: 8px; 
+            cursor: pointer;
+            user-select: none;
+        }
+        .constraint-group-header:hover { opacity: 0.8; }
+        .constraint-arrow {
+            font-size: 1.2em;
+            color: #667eea;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+        .constraint-arrow.up {
+            transform: rotate(180deg);
+        }
+        .constraint-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; }
+        .constraint-list.hidden { display: none; }
+        .constraint-item { 
+            padding: 8px 12px; 
+            background: #fff; 
+            border-radius: 6px; 
+            border-left: 3px solid #ddd;
+            font-size: 0.9em;
+        }
+        .constraint-item.violated { border-left-color: #c33; background: #fee; }
+        .constraint-item.satisfied { border-left-color: #2f8a2f; background: #efe; }
+        .constraint-name { font-weight: 500; color: #333; margin-bottom: 4px; }
+        .constraint-score { color: #666; font-size: 0.85em; }
 
         .timetable-container {
             overflow-x: auto;
@@ -76,6 +110,7 @@
         thead { background: #667eea; color: #fff; position: sticky; top: 0; z-index: 5; }
         th, td { padding: 12px 10px; border: 1px solid #e0e0e0; text-align: left; }
         th:first-child, td:first-child { width: 160px; font-weight: 700; background: #f6f7fb; }
+        th:first-child { color: #000; }
         tbody tr:hover { background: #f8f9fa; }
         .lesson {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -130,6 +165,7 @@
                     <div id="softScore" class="score-value">-</div>
                 </div>
             </div>
+            <div id="constraintMatches" class="constraint-matches"></div>
         </div>
 
         <div id="timetableContainer" class="timetable-container">
@@ -172,6 +208,87 @@
                 hard: hardPart ? hardPart.replace('hard', '') : '0',
                 soft: softPart ? softPart.replace('soft', '') : '0'
             };
+        }
+        
+        function parseConstraintScore(scoreStr) {
+            if (!scoreStr) return { hard: 0, soft: 0 };
+            const [hardPart, softPart] = scoreStr.split('/');
+            return {
+                hard: hardPart ? parseInt(hardPart.replace('hard', '') || '0') : 0,
+                soft: softPart ? parseInt(softPart.replace('soft', '') || '0') : 0
+            };
+        }
+        
+        function displayConstraintMatches(constraintMatches) {
+            const container = document.getElementById('constraintMatches');
+            if (!constraintMatches || Object.keys(constraintMatches).length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            const hardConstraints = [];
+            const softConstraints = [];
+            
+            Object.entries(constraintMatches).forEach(([name, scoreStr]) => {
+                const score = parseConstraintScore(scoreStr);
+                const constraint = { name, scoreStr, score };
+                
+                // If constraint has a hard score component (non-zero), it's a hard constraint
+                // Otherwise, it's a soft constraint
+                if (score.hard !== 0) {
+                    hardConstraints.push(constraint);
+                } else {
+                    softConstraints.push(constraint);
+                }
+            });
+            
+            let html = '';
+            
+            // Sort constraints: violated first, then by score (most negative first)
+            hardConstraints.sort((a, b) => {
+                if (a.score.hard < 0 && b.score.hard >= 0) return -1;
+                if (a.score.hard >= 0 && b.score.hard < 0) return 1;
+                return a.score.hard - b.score.hard;
+            });
+            
+            softConstraints.sort((a, b) => {
+                if (a.score.soft < 0 && b.score.soft >= 0) return -1;
+                if (a.score.soft >= 0 && b.score.soft < 0) return 1;
+                return a.score.soft - b.score.soft;
+            });
+            
+            if (hardConstraints.length > 0) {
+                html += '<div class="constraint-group">';
+                html += '<div class="constraint-group-title">Hard Constraints</div>';
+                html += '<div class="constraint-list">';
+                hardConstraints.forEach(constraint => {
+                    const isViolated = constraint.score.hard < 0;
+                    html += `<div class="constraint-item ${isViolated ? 'violated' : 'satisfied'}">`;
+                    html += `<div class="constraint-name">${constraint.name}</div>`;
+                    html += `<div class="constraint-score">Score: ${constraint.scoreStr}</div>`;
+                    html += '</div>';
+                });
+                html += '</div></div>';
+            }
+            
+            if (softConstraints.length > 0) {
+                html += '<div class="constraint-group">';
+                html += '<div class="constraint-group-header" onclick="toggleSoftConstraints()">';
+                html += '<span class="constraint-arrow" id="softConstraintsArrow">▼</span>';
+                html += '<div class="constraint-group-title">Soft Constraints</div>';
+                html += '</div>';
+                html += '<div class="constraint-list hidden" id="softConstraintsList">';
+                softConstraints.forEach(constraint => {
+                    const isViolated = constraint.score.soft < 0;
+                    html += `<div class="constraint-item ${isViolated ? 'violated' : 'satisfied'}">`;
+                    html += `<div class="constraint-name">${constraint.name}</div>`;
+                    html += `<div class="constraint-score">Score: ${constraint.scoreStr}</div>`;
+                    html += '</div>';
+                });
+                html += '</div></div>';
+            }
+            
+            container.innerHTML = html;
         }
         function formatTime(time) { return time ? time.substring(0,5) : 'N/A'; }
         function getTimeSlotKey(ts) { return ts && ts.schoolDay && ts.startTime ? `${ts.schoolDay}_${ts.startTime}` : null; }
@@ -220,6 +337,9 @@
             hardEl.className = `score-value ${parseInt(score.hard) === 0 ? 'hard-positive' : 'hard-negative'}`;
             document.getElementById('softScore').textContent = score.soft;
             document.getElementById('scoreSection').style.display = 'block';
+            
+            // Display constraint matches
+            displayConstraintMatches(data.constraintMatches || {});
 
             lessonsByClass = {};
             classInfoMap = new Map();
@@ -367,6 +487,20 @@
         function toggleLoading(isLoading) {
             document.getElementById('loading').style.display = isLoading ? 'block' : 'none';
             document.getElementById('fetchBtn').disabled = isLoading;
+        }
+
+        function toggleSoftConstraints() {
+            const list = document.getElementById('softConstraintsList');
+            const arrow = document.getElementById('softConstraintsArrow');
+            if (!list || !arrow) return;
+            
+            if (list.classList.contains('hidden')) {
+                list.classList.remove('hidden');
+                arrow.classList.add('up');
+            } else {
+                list.classList.add('hidden');
+                arrow.classList.remove('up');
+            }
         }
 
         document.getElementById('jobIdInput').addEventListener('keypress', e => { if (e.key === 'Enter') fetchSolution(); });
