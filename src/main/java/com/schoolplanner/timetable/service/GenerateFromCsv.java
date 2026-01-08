@@ -3,9 +3,7 @@ package com.schoolplanner.timetable.service;
 import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
 import com.schoolplanner.timetable.domain.*;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,7 +11,7 @@ import java.util.List;
 
 public class GenerateFromCsv {
 
-    public static TimeTable generateFromCsv(String csvFilePath) {
+    public static TimeTable generateFromCsv(String resourcePath) {
         List<TimeSlot> timeSlots = generateTimeSlots();
         List<Room> rooms = generateRooms();
         List<LunchGroup> lunchGroups = generateLunchGroups(timeSlots);
@@ -24,8 +22,18 @@ public class GenerateFromCsv {
 
         long lessonIdCounter = 0;
         long classIdCounter = 0;
+        InputStream is = GenerateFromCsv.class
+                .getClassLoader()
+                .getResourceAsStream(resourcePath);
 
-        try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {
+        if (is == null) {
+            throw new IllegalArgumentException(
+                    "CSV not found on classpath: " + resourcePath
+            );
+        }
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+
             String headerLine = br.readLine();
             if (headerLine == null) return null;
 
