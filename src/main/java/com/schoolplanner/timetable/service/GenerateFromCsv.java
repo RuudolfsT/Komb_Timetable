@@ -21,6 +21,7 @@ public class GenerateFromCsv {
         List<TeachingUnit> allTeachingUnits = new ArrayList<>();
 
         long lessonIdCounter = 0;
+        long teachingUnitCounter = 0;
         long classIdCounter = 0;
         InputStream is = GenerateFromCsv.class
                 .getClassLoader()
@@ -91,7 +92,7 @@ public class GenerateFromCsv {
 
                     RoomType requiredRoom = getRoomTypeForSubject(subject);
 
-                    TeachingUnit unit = new TeachingUnit(subject, grade, requiredRoom);
+                    TeachingUnit unit = new TeachingUnit(++teachingUnitCounter, subject, grade, requiredRoom);
 
                     if (!allTeachingUnits.contains(unit)) {
                         allTeachingUnits.add(unit);

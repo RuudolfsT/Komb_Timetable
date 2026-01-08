@@ -44,9 +44,9 @@ public class SampleData {
         );
         List<LunchGroup> allLunchGroups = List.of(lunchGroup1, lunchGroup2);
 
-        TeachingUnit math7 = new TeachingUnit(Subject.MATH, 7, RoomType.NORMAL);
-        TeachingUnit chem8 = new TeachingUnit(Subject.CHEMISTRY, 8, RoomType.CHEMISTRY_LAB);
-        TeachingUnit sport7 = new TeachingUnit(Subject.SPORT, 7, RoomType.GYM);
+        TeachingUnit math7 = new TeachingUnit(1L, Subject.MATH, 7, RoomType.NORMAL);
+        TeachingUnit chem8 = new TeachingUnit(2L, Subject.CHEMISTRY, 8, RoomType.CHEMISTRY_LAB);
+        TeachingUnit sport7 = new TeachingUnit(3L, Subject.SPORT, 7, RoomType.GYM);
 
         List<SchoolClass> allClasses = List.of(class7A, class8B);
 
