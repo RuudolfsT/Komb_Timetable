@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<solver>
+    <solutionClass>
+        com.schoolplanner.timetable.domain.TimeTable
+    </solutionClass>
+
+    <entityClass>
+        com.schoolplanner.timetable.domain.Lesson
+    </entityClass>
+
+    <scoreDirectorFactory>
+        <constraintProviderClass>
+            com.schoolplanner.timetable.solver.TimeTableConstraintProvider
+        </constraintProviderClass>
+    </scoreDirectorFactory>
+
+    <termination>
+        <secondsSpentLimit>30</secondsSpentLimit>
+    </termination>
+</solver>

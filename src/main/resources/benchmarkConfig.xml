@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plannerBenchmark>
+    <benchmarkDirectory>target/benchmarks</benchmarkDirectory>
+
+    <inheritedSolverBenchmark>
+        <solver>
+            <solutionClass>
+                com.schoolplanner.timetable.domain.TimeTable
+            </solutionClass>
+
+            <entityClass>
+                com.schoolplanner.timetable.domain.Lesson
+            </entityClass>
+
+            <scoreDirectorFactory>
+                <constraintProviderClass>
+                    com.schoolplanner.timetable.solver.TimeTableConstraintProvider
+                </constraintProviderClass>
+            </scoreDirectorFactory>
+
+            <termination>
+                <secondsSpentLimit>30</secondsSpentLimit>
+            </termination>
+        </solver>
+    </inheritedSolverBenchmark>
+    <solverBenchmark>
+        <name>Timefold Default (Baseline)</name>
+        <solver>
+            <solverConfigFile>solverConfig.xml</solverConfigFile>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>FIRST_FIT_TABU</name>
+        <solverConfig inherit="true">
+            <constructionHeuristic>
+                <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+            </constructionHeuristic>
+
+            <localSearch>
+                <localSearchType>TABU_SEARCH</localSearchType>
+            </localSearch>
+        </solverConfig>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>FIRST_FIT_SIMULATED_ANNEALING</name>
+        <solverConfig inherit="true">
+            <constructionHeuristic>
+                <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+            </constructionHeuristic>
+
+            <localSearch>
+                <localSearchType>SIMULATED_ANNEALING</localSearchType>
+            </localSearch>
+        </solverConfig>
+    </solverBenchmark>
+
+</plannerBenchmark>
