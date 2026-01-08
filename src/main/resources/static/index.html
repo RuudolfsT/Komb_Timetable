@@ -106,11 +106,13 @@
             border-collapse: collapse;
             background: #fff;
             min-width: 900px;
+            table-layout: fixed;
         }
         thead { background: #667eea; color: #fff; position: sticky; top: 0; z-index: 5; }
         th, td { padding: 12px 10px; border: 1px solid #e0e0e0; text-align: left; }
         th:first-child, td:first-child { width: 160px; font-weight: 700; background: #f6f7fb; }
         th:first-child { color: #000; }
+        th:not(:first-child), td:not(:first-child) { width: calc((100% - 160px) / 5); }
         tbody tr:hover { background: #f8f9fa; }
         .lesson {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -121,8 +123,18 @@
             line-height: 1.4;
         }
         .lesson .subject { font-weight: 700; }
-        .lesson .teacher, .lesson .room { font-size: 0.9em; opacity: 0.95; }
+        .lesson .teacher, .lesson .room, .lesson .room-type { font-size: 0.9em; opacity: 0.95; }
+        
         .empty { color: #aaa; font-size: 0.9em; }
+        .lunch-break {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 500;
+            border: 1px solid #ffc107;
+        }
 
         .loading { display: none; text-align: center; padding: 30px; color: #555; }
         .spinner {
@@ -292,6 +304,41 @@
         }
         function formatTime(time) { return time ? time.substring(0,5) : 'N/A'; }
         function getTimeSlotKey(ts) { return ts && ts.schoolDay && ts.startTime ? `${ts.schoolDay}_${ts.startTime}` : null; }
+        
+        function isLunchBreak(grade, startTime, endTime) {
+            if (!grade || !startTime || !endTime) return false;
+            
+            // Extract time in HH:mm format (handle both "HH:mm" and "HH:mm:ss" formats)
+            const start = startTime.substring(0, 5);
+            const end = endTime.substring(0, 5);
+            
+            // Convert to comparable format (minutes since midnight)
+            function timeToMinutes(timeStr) {
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                return hours * 60 + minutes;
+            }
+            
+            const startMins = timeToMinutes(start);
+            const endMins = timeToMinutes(end);
+            
+            // Grades 1-6: lunch from 10:10 to 11:50
+            // A time slot overlaps lunch if: start < 11:50 && end > 10:10
+            if (grade >= 1 && grade <= 6) {
+                const lunchStart = timeToMinutes('10:10');
+                const lunchEnd = timeToMinutes('11:50');
+                return startMins < lunchEnd && endMins > lunchStart;
+            }
+            
+            // Grades 7-12: lunch from 11:00 to 12:40
+            // A time slot overlaps lunch if: start < 12:40 && end > 11:00
+            if (grade >= 7 && grade <= 12) {
+                const lunchStart = timeToMinutes('11:00');
+                const lunchEnd = timeToMinutes('12:40');
+                return startMins < lunchEnd && endMins > lunchStart;
+            }
+            
+            return false;
+        }
         function compareTimeSlots(a, b) {
             const dA = DAY_ORDER.indexOf(a.schoolDay);
             const dB = DAY_ORDER.indexOf(b.schoolDay);
@@ -397,6 +444,10 @@
             const lessons = lessonsByClass[className] || [];
             const table = document.getElementById('timetableTable');
             table.innerHTML = '';
+            
+            // Get class grade for lunch break detection
+            const classInfo = classInfoMap.get(className);
+            const classGrade = classInfo ? classInfo.grade : null;
 
             // build header
             const thead = document.createElement('thead');
@@ -446,7 +497,12 @@
                     if (lesson) {
                         td.innerHTML = renderLesson(lesson);
                     } else {
-                        td.innerHTML = '<span class=\"empty\">—</span>';
+                        // Check if this is a lunch break
+                        if (classGrade && isLunchBreak(classGrade, t.start, t.end)) {
+                            td.innerHTML = '<div class="lunch-break">Lunch break</div>';
+                        } else {
+                            td.innerHTML = '<span class="empty">—</span>';
+                        }
                     }
                     row.appendChild(td);
                 });
@@ -462,13 +518,24 @@
             const subject = lesson.teachingUnit?.subject || 'N/A';
             const teacher = lesson.teacher ? `${lesson.teacher.firstName || ''} ${lesson.teacher.lastName || ''}`.trim() || lesson.teacher.id || 'N/A' : 'N/A';
             const room = lesson.room?.id || 'N/A';
+            const roomType = lesson.teachingUnit?.roomType || 'N/A';
             return `
                 <div class=\"lesson\">
                     <div class=\"subject\">${subject}</div>
                     <div class=\"teacher\">${teacher}</div>
                     <div class=\"room\">Room: ${room}</div>
+                    <div class=\"room-type\">Room type: ${formatRoomType(roomType)}</div>
                 </div>
             `;
+        }
+        
+        function formatRoomType(roomType) {
+            if (!roomType || roomType === 'N/A') return 'N/A';
+            // Convert enum values to readable format
+            return roomType
+                .split('_')
+                .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+                .join(' ');
         }
 
         function resetView() {
