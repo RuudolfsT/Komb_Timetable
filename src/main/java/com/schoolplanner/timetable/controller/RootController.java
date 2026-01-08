@@ -9,7 +9,7 @@ import java.util.Map;
 @RestController
 public class RootController {
 
-    @GetMapping("/")
+    @GetMapping("/api")
     public ResponseEntity<Map<String, Object>> getApiInfo() {
         return ResponseEntity.ok(Map.of(
                 "message", "School Timetable Optimizer API",

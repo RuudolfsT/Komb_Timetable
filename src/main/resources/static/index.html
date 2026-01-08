@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Timetable Solution Viewer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+        h1 { color: #333; margin-bottom: 10px; font-size: 2em; }
+        .subtitle { color: #666; margin-bottom: 20px; }
+
+        .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        input[type="text"], select {
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            min-width: 220px;
+            flex: 1;
+        }
+        input[type="text"]:focus, select:focus { outline: none; border-color: #667eea; }
+        button {
+            padding: 12px 20px;
+            background: #667eea;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            min-width: 140px;
+        }
+        button:hover { background: #5568d3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        .status { display: none; padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; }
+        .status.error { background: #fee; color: #c33; border: 1px solid #fcc; }
+        .status.success { background: #efe; color: #2f8a2f; border: 1px solid #cfc; }
+        .status.info { background: #eef; color: #355; border: 1px solid #ccf; }
+
+        .score-section { background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 20px; display: none; }
+        .score-title { font-weight: 700; margin-bottom: 8px; }
+        .score-values { display: flex; gap: 20px; flex-wrap: wrap; }
+        .score-item { min-width: 120px; }
+        .score-label { color: #555; font-size: 0.9em; }
+        .score-value { font-size: 1.2em; }
+        .score-value.hard-positive { color: #2f8a2f; }
+        .score-value.hard-negative { color: #c33; }
+
+        .timetable-container {
+            overflow-x: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            display: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            min-width: 900px;
+        }
+        thead { background: #667eea; color: #fff; position: sticky; top: 0; z-index: 5; }
+        th, td { padding: 12px 10px; border: 1px solid #e0e0e0; text-align: left; }
+        th:first-child, td:first-child { width: 160px; font-weight: 700; background: #f6f7fb; }
+        tbody tr:hover { background: #f8f9fa; }
+        .lesson {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            line-height: 1.4;
+        }
+        .lesson .subject { font-weight: 700; }
+        .lesson .teacher, .lesson .room { font-size: 0.9em; opacity: 0.95; }
+        .empty { color: #aaa; font-size: 0.9em; }
+
+        .loading { display: none; text-align: center; padding: 30px; color: #555; }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
+
+        .empty-state { display: none; text-align: center; padding: 40px 20px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>School Timetable Solution Viewer</h1>
+        <p class="subtitle">Enter a job ID, choose a class, and view its schedule grouped by days.</p>
+
+        <div class="controls">
+            <input type="text" id="jobIdInput" placeholder="Enter Job ID" />
+            <button id="fetchBtn" onclick="fetchSolution()">Fetch Solution</button>
+            <select id="classSelect" disabled onchange="renderSelectedClass()">
+                <option value="">Select class...</option>
+            </select>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div id="scoreSection" class="score-section">
+            <div class="score-title">Solution Score</div>
+            <div class="score-values">
+                <div class="score-item">
+                    <div class="score-label">Hard score</div>
+                    <div id="hardScore" class="score-value">-</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Soft score</div>
+                    <div id="softScore" class="score-value">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="timetableContainer" class="timetable-container">
+            <table id="timetableTable"></table>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <div>Loading solution...</div>
+        </div>
+
+        <div id="emptyState" class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p>No lessons found for this class.</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/timetable';
+        const DAY_ORDER = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+        const DAY_NAMES = { MONDAY: 'Monday', TUESDAY: 'Tuesday', WEDNESDAY: 'Wednesday', THURSDAY: 'Thursday', FRIDAY: 'Friday' };
+
+        let solutionLessons = [];
+        let lessonsByClass = {};
+        let sortedTimeSlots = [];
+        let classInfoMap = new Map(); // className -> { name, grade }
+
+        function showStatus(message, type) {
+            const el = document.getElementById('status');
+            el.textContent = message;
+            el.className = `status ${type}`;
+            el.style.display = 'block';
+        }
+        function hideStatus() { document.getElementById('status').style.display = 'none'; }
+
+        function formatScore(score) {
+            if (!score) return { hard: '0', soft: '0' };
+            const [hardPart, softPart] = score.split('/');
+            return {
+                hard: hardPart ? hardPart.replace('hard', '') : '0',
+                soft: softPart ? softPart.replace('soft', '') : '0'
+            };
+        }
+        function formatTime(time) { return time ? time.substring(0,5) : 'N/A'; }
+        function getTimeSlotKey(ts) { return ts && ts.schoolDay && ts.startTime ? `${ts.schoolDay}_${ts.startTime}` : null; }
+        function compareTimeSlots(a, b) {
+            const dA = DAY_ORDER.indexOf(a.schoolDay);
+            const dB = DAY_ORDER.indexOf(b.schoolDay);
+            if (dA !== dB) return dA - dB;
+            return a.startTime.localeCompare(b.startTime);
+        }
+
+        async function fetchSolution() {
+            const jobId = document.getElementById('jobIdInput').value.trim();
+            if (!jobId) { showStatus('Please enter a Job ID', 'error'); return; }
+
+            hideStatus();
+            toggleLoading(true);
+            resetView();
+
+            try {
+                const res = await fetch(`${API_BASE}/jobs/${jobId}/solution`);
+                if (res.status === 404) { showStatus('Job not found. Please check the Job ID.', 'error'); return; }
+                if (res.status === 409) { showStatus('Solution is not ready yet. Try again later.', 'info'); return; }
+                if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+
+                const data = await res.json();
+                handleSolution(data);
+                showStatus('Solution loaded. Select a class to view.', 'success');
+            } catch (err) {
+                console.error(err);
+                showStatus(`Error: ${err.message}`, 'error');
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
+        function handleSolution(data) {
+            solutionLessons = data.lessons || [];
+            if (solutionLessons.length === 0) {
+                document.getElementById('emptyState').style.display = 'block';
+                return;
+            }
+
+            const score = formatScore(data.score || '0hard/0soft');
+            const hardEl = document.getElementById('hardScore');
+            hardEl.textContent = score.hard;
+            hardEl.className = `score-value ${parseInt(score.hard) === 0 ? 'hard-positive' : 'hard-negative'}`;
+            document.getElementById('softScore').textContent = score.soft;
+            document.getElementById('scoreSection').style.display = 'block';
+
+            lessonsByClass = {};
+            classInfoMap = new Map();
+            const timeSlotMap = new Map();
+
+            solutionLessons.forEach(lesson => {
+                const className = lesson.schoolClass?.name || 'Unknown';
+                const classGrade = lesson.schoolClass?.grade ?? null;
+                classInfoMap.set(className, { name: className, grade: classGrade });
+                if (!lessonsByClass[className]) lessonsByClass[className] = [];
+                lessonsByClass[className].push(lesson);
+
+                if (lesson.timeSlot) {
+                    const key = getTimeSlotKey(lesson.timeSlot);
+                    if (key && !timeSlotMap.has(key)) {
+                        timeSlotMap.set(key, lesson.timeSlot);
+                    }
+                }
+            });
+
+            sortedTimeSlots = Array.from(timeSlotMap.values()).sort(compareTimeSlots);
+
+            const classList = Array.from(classInfoMap.values()).sort((a, b) => {
+                const gradeA = a.grade ?? Number.MAX_SAFE_INTEGER;
+                const gradeB = b.grade ?? Number.MAX_SAFE_INTEGER;
+                if (gradeA !== gradeB) return gradeA - gradeB;
+                return (a.name || '').localeCompare(b.name || '');
+            });
+
+            populateClassSelect(classList);
+        }
+
+        function populateClassSelect(classList) {
+            const select = document.getElementById('classSelect');
+            select.innerHTML = '<option value=\"\">Select class...</option>';
+            classList.forEach(({ name }) => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name; // no numeric prefix in the label
+                select.appendChild(opt);
+            });
+            select.disabled = false;
+        }
+
+        function renderSelectedClass() {
+            const className = document.getElementById('classSelect').value;
+            if (!className) {
+                resetTable();
+                return;
+            }
+            renderTableForClass(className);
+        }
+
+        function renderTableForClass(className) {
+            const lessons = lessonsByClass[className] || [];
+            const table = document.getElementById('timetableTable');
+            table.innerHTML = '';
+
+            // build header
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            const timeTh = document.createElement('th');
+            timeTh.textContent = 'Time';
+            headerRow.appendChild(timeTh);
+            DAY_ORDER.forEach(day => {
+                const th = document.createElement('th');
+                th.textContent = DAY_NAMES[day];
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+
+            // map lessons by day/time for quick lookup
+            const lessonMap = new Map();
+            lessons.forEach(l => {
+                if (l.timeSlot) {
+                    const key = `${l.timeSlot.schoolDay}_${l.timeSlot.startTime}_${l.timeSlot.endTime}`;
+                    lessonMap.set(key, l);
+                }
+            });
+
+            // group time slots by start/end regardless of day to build rows
+            const timeRows = [];
+            const uniqueTimes = new Map();
+            sortedTimeSlots.forEach(ts => {
+                const key = `${ts.startTime}_${ts.endTime}`;
+                if (!uniqueTimes.has(key)) uniqueTimes.set(key, { start: ts.startTime, end: ts.endTime });
+            });
+            uniqueTimes.forEach(v => timeRows.push(v));
+            timeRows.sort((a,b) => a.start.localeCompare(b.start));
+
+            timeRows.forEach(t => {
+                const row = document.createElement('tr');
+                const timeTd = document.createElement('td');
+                timeTd.textContent = `${formatTime(t.start)} - ${formatTime(t.end)}`;
+                row.appendChild(timeTd);
+
+                DAY_ORDER.forEach(day => {
+                    const key = `${day}_${t.start}_${t.end}`;
+                    const lesson = lessonMap.get(key);
+                    const td = document.createElement('td');
+                    if (lesson) {
+                        td.innerHTML = renderLesson(lesson);
+                    } else {
+                        td.innerHTML = '<span class=\"empty\">—</span>';
+                    }
+                    row.appendChild(td);
+                });
+                tbody.appendChild(row);
+            });
+
+            table.appendChild(tbody);
+            document.getElementById('timetableContainer').style.display = 'block';
+            document.getElementById('emptyState').style.display = lessons.length === 0 ? 'block' : 'none';
+        }
+
+        function renderLesson(lesson) {
+            const subject = lesson.teachingUnit?.subject || 'N/A';
+            const teacher = lesson.teacher ? `${lesson.teacher.firstName || ''} ${lesson.teacher.lastName || ''}`.trim() || lesson.teacher.id || 'N/A' : 'N/A';
+            const room = lesson.room?.id || 'N/A';
+            return `
+                <div class=\"lesson\">
+                    <div class=\"subject\">${subject}</div>
+                    <div class=\"teacher\">${teacher}</div>
+                    <div class=\"room\">Room: ${room}</div>
+                </div>
+            `;
+        }
+
+        function resetView() {
+            document.getElementById('scoreSection').style.display = 'none';
+            document.getElementById('timetableContainer').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('classSelect').disabled = true;
+            document.getElementById('classSelect').innerHTML = '<option value=\"\">Select class...</option>';
+            resetTable();
+        }
+
+        function resetTable() {
+            document.getElementById('timetableTable').innerHTML = '';
+        }
+
+        function toggleLoading(isLoading) {
+            document.getElementById('loading').style.display = isLoading ? 'block' : 'none';
+            document.getElementById('fetchBtn').disabled = isLoading;
+        }
+
+        document.getElementById('jobIdInput').addEventListener('keypress', e => { if (e.key === 'Enter') fetchSolution(); });
+    </script>
+</body>
+</html>
