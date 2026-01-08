@@ -37,7 +37,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Skolotājs nevar vienlaicīgi pasniegt divas stundas
-    private Constraint teacherConflict(ConstraintFactory constraintFactory) {
+    Constraint teacherConflict(ConstraintFactory constraintFactory) {
         return constraintFactory.forEachUniquePair(
                         Lesson.class,
                         Joiners.equal(Lesson::getTeacher),
@@ -48,7 +48,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Telpā nevar notikt divas stundas vienlaicīgi
-    private Constraint roomConflict(ConstraintFactory constraintFactory) {
+    Constraint roomConflict(ConstraintFactory constraintFactory) {
         return constraintFactory.forEachUniquePair(
                         Lesson.class,
                         Joiners.equal(Lesson::getRoom),
@@ -59,7 +59,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Stundentu grupa nevar apmeklēt divas stundas vienlaicīgi
-    private Constraint studentGroupConflict(ConstraintFactory constraintFactory) {
+    Constraint studentGroupConflict(ConstraintFactory constraintFactory) {
         return constraintFactory.forEachUniquePair(
                         Lesson.class,
                         Joiners.equal(Lesson::getSchoolClass),
@@ -70,7 +70,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Telpai jāatbilst nepieciešamajam telpas tipam
-    private Constraint roomTypeMatch(ConstraintFactory constraintFactory) {
+    Constraint roomTypeMatch(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getRoom() != null)
                 .filter(lesson -> lesson.getTeachingUnit().getRoomType() != lesson.getRoom().getRoomType())
@@ -79,7 +79,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Skolotājs drīkst pasniegt noteikto stundu
-    private Constraint qualifiedUnitMatch(ConstraintFactory constraintFactory) {
+    Constraint qualifiedUnitMatch(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getTeachingUnit() != null)
                 .filter(lesson -> lesson.getTeacher() != null)
@@ -89,7 +89,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Skolotājam jābūt pieejamam
-    private Constraint teacherAvailability(ConstraintFactory constraintFactory) {
+    Constraint teacherAvailability(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getTimeSlot() != null)
                 .filter(lesson -> lesson.getTeacher() != null)
@@ -112,7 +112,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
 //    }
 
     // Priekšmeta stundu skaits nedrīkst pārsniegt dienas limitu
-    private Constraint dailyLessonCountLimit(ConstraintFactory constraintFactory) {
+    Constraint dailyLessonCountLimit(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getTimeSlot() != null)
                 .groupBy(
@@ -134,7 +134,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Noteiktiem priekšmetiem jānotiek 2 stundām pēc kārtas
-    private Constraint subjectMustBeConsecutive(ConstraintFactory constraintFactory) {
+    Constraint subjectMustBeConsecutive(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getTimeSlot() != null)
                 .filter(lesson -> lesson.getTeachingUnit().getSubject().isMustBeConsecutive())
@@ -150,7 +150,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Vienu priekšmetu vienmēr pasniedz viens un tas pats skolotājs
-    private Constraint maxOneTeacherPerSchoolClassPerUnit(ConstraintFactory constraintFactory) {
+    Constraint maxOneTeacherPerSchoolClassPerUnit(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getTeacher() != null)
                 .groupBy(
@@ -164,7 +164,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Skolotājam vēlas pasniegt stundu savā klasē
-    private Constraint teacherRoomStability(ConstraintFactory constraintFactory) {
+    Constraint teacherRoomStability(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getRoom() != null)
                 .filter(lesson -> lesson.getTeacher().getHomeRoom() != null)
@@ -174,7 +174,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Skolēni nevēlas brīvas starpstundas
-    private Constraint studentGaps(ConstraintFactory constraintFactory) {
+    Constraint studentGaps(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getTimeSlot() != null)
                 .groupBy(Lesson::getSchoolClass,
@@ -188,7 +188,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Skolotāji nevēlas brīvas starpstundas
-    private Constraint teacherGaps(ConstraintFactory constraintFactory) {
+    Constraint teacherGaps(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getTimeSlot() != null)
                 .groupBy(Lesson::getTeacher,
@@ -202,7 +202,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Katrai klasei ir savs pusdienu laiks, kurā nedrīkst būt stundas
-    private Constraint lunchGroupConstraint(ConstraintFactory factory) {
+    Constraint lunchGroupConstraint(ConstraintFactory factory) {
         return factory.forEach(Lesson.class)
                 .join(LunchGroup.class,
                         Joiners.filtering((lesson, group) ->
@@ -220,7 +220,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
     }
 
     // Skolēni vēlas pēc iespējas īsāku dienu
-    private Constraint evenlySpreadLessonsAndLessBefore(ConstraintFactory constraintFactory) {
+    Constraint evenlySpreadLessonsAndLessBefore(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getTimeSlot() != null)
                 .groupBy(Lesson::getSchoolClass,
