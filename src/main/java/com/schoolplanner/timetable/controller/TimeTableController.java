@@ -41,7 +41,8 @@ public class TimeTableController {
     // Nosūta problēmu no csv
     @PostMapping("/jobs/from-csv")
     public ResponseEntity<Map<String, String>> submitCsvProblem() {
-        TimeTable problem = GenerateFromCsv.generateFromCsv("src/main/java/com/schoolplanner/timetable/service/lesson_list.csv");
+
+        TimeTable problem = GenerateFromCsv.generateFromCsv("data/lesson_list.csv");
         String jobId = asyncSolveService.submit(problem);
         return ResponseEntity.accepted().body(Map.of("jobId", jobId));
     }
