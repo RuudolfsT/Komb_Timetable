@@ -6,6 +6,7 @@ let solutionLessons = [];
 let lessonsByClass = {};
 let sortedTimeSlots = [];
 let classInfoMap = new Map(); // className -> { name, grade }
+let lunchGroups = []; // Store lunch groups from the solution
 
 function showStatus(message, type) {
     const el = document.getElementById('status');
@@ -135,7 +136,16 @@ function formatTime(time) { return time ? time.substring(0,5) : 'N/A'; }
 function getTimeSlotKey(ts) { return ts && ts.schoolDay && ts.startTime ? `${ts.schoolDay}_${ts.startTime}` : null; }
 
 function isLunchBreak(grade, startTime, endTime) {
-    if (!grade || !startTime || !endTime) return false;
+    if (!grade || !startTime || !endTime || !lunchGroups || lunchGroups.length === 0) return false;
+    
+    // Find the lunch group that applies to this grade
+    const lunchGroup = lunchGroups.find(lg => 
+        lg.minGrade <= grade && grade <= lg.maxGrade
+    );
+    
+    if (!lunchGroup || !lunchGroup.lunchTimeSlots || lunchGroup.lunchTimeSlots.length === 0) {
+        return false;
+    }
     
     // Extract time in HH:mm format (handle both "HH:mm" and "HH:mm:ss" formats)
     const start = startTime.substring(0, 5);
@@ -150,23 +160,19 @@ function isLunchBreak(grade, startTime, endTime) {
     const startMins = timeToMinutes(start);
     const endMins = timeToMinutes(end);
     
-    // Grades 1-6: lunch from 10:10 to 11:50
-    // A time slot overlaps lunch if: start < 11:50 && end > 10:10
-    if (grade >= 1 && grade <= 6) {
-        const lunchStart = timeToMinutes('10:10');
-        const lunchEnd = timeToMinutes('11:50');
-        return startMins < lunchEnd && endMins > lunchStart;
-    }
-    
-    // Grades 7-12: lunch from 11:00 to 12:40
-    // A time slot overlaps lunch if: start < 12:40 && end > 11:00
-    if (grade >= 7 && grade <= 12) {
-        const lunchStart = timeToMinutes('11:00');
-        const lunchEnd = timeToMinutes('12:40');
-        return startMins < lunchEnd && endMins > lunchStart;
-    }
-    
-    return false;
+    // Check if the time slot overlaps with any lunch time slot
+    return lunchGroup.lunchTimeSlots.some(lunchSlot => {
+        const lunchStart = lunchSlot.startTime ? lunchSlot.startTime.substring(0, 5) : null;
+        const lunchEnd = lunchSlot.endTime ? lunchSlot.endTime.substring(0, 5) : null;
+        
+        if (!lunchStart || !lunchEnd) return false;
+        
+        const lunchStartMins = timeToMinutes(lunchStart);
+        const lunchEndMins = timeToMinutes(lunchEnd);
+        
+        // A time slot overlaps lunch if: start < lunchEnd && end > lunchStart
+        return startMins < lunchEndMins && endMins > lunchStartMins;
+    });
 }
 function compareTimeSlots(a, b) {
     const dA = DAY_ORDER.indexOf(a.schoolDay);
@@ -202,6 +208,7 @@ async function fetchSolution() {
 
 function handleSolution(data) {
     solutionLessons = data.lessons || [];
+    lunchGroups = data.lunchGroups || [];
     if (solutionLessons.length === 0) {
         document.getElementById('emptyState').style.display = 'block';
         return;

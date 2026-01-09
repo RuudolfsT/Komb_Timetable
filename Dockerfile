@@ -2,10 +2,17 @@
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 
+# Copy pom.xml first for better layer caching
 COPY pom.xml .
-RUN mvn dependency:go-offline
 
+# Download dependencies (cached layer if pom.xml doesn't change)
+# Using dependency:resolve instead of go-offline for better reliability
+RUN mvn dependency:resolve
+
+# Copy source code
 COPY src ./src
+
+# Build the application
 RUN mvn clean package -DskipTests
 
 # -------- Runtime stage --------

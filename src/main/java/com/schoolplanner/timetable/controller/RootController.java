@@ -17,6 +17,7 @@ public class RootController {
                 "endpoints", Map.of(
                         "POST /api/timetable/jobs", "Submit a timetable problem as JSON",
                         "POST /api/timetable/jobs/from-csv", "Submit a timetable problem from CSV file",
+                        "POST /api/timetable/jobs/create-problem", "Generate a random timetable problem and start solving it",
                         "GET /api/timetable/jobs/{jobId}", "Get the status of a solving job",
                         "GET /api/timetable/jobs/{jobId}/solution", "Get the solution for a completed job",
                         "GET /api/timetable/alljobs", "Get all job statuses"

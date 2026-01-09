@@ -4,6 +4,7 @@ import com.schoolplanner.timetable.controller.dto.SolveJob;
 import com.schoolplanner.timetable.controller.dto.SolveStatus;
 import com.schoolplanner.timetable.controller.dto.TimeTableResponse;
 import com.schoolplanner.timetable.domain.TimeTable;
+import com.schoolplanner.timetable.generator.JsonProblemGenerator;
 import com.schoolplanner.timetable.service.AsyncSolveService;
 import com.schoolplanner.timetable.service.GenerateFromCsv;
 import com.schoolplanner.timetable.service.SampleData;
@@ -43,6 +44,23 @@ public class TimeTableController {
     public ResponseEntity<Map<String, String>> submitCsvProblem() {
 
         TimeTable problem = GenerateFromCsv.generateFromCsv("data/lesson_list.csv");
+        String jobId = asyncSolveService.submit(problem);
+        return ResponseEntity.accepted().body(Map.of("jobId", jobId));
+    }
+
+    // Ģenerē nejaušu problēmu un sāk to risināt
+    @PostMapping("/jobs/create-problem")
+    public ResponseEntity<Map<String, String>> createAndSolveRandomProblem(
+            @RequestParam(required = false, defaultValue = "5") Integer numClasses,
+            @RequestParam(required = false, defaultValue = "8") Integer numTeachers,
+            @RequestParam(required = false, defaultValue = "10") Integer numRooms,
+            @RequestParam(required = false, defaultValue = "6") Integer lessonsPerClass,
+            @RequestParam(required = false, defaultValue = "1") Integer minGrade,
+            @RequestParam(required = false, defaultValue = "12") Integer maxGrade
+    ) {
+        TimeTable problem = JsonProblemGenerator.generateRandomProblem(
+                numClasses, numTeachers, numRooms, lessonsPerClass, minGrade, maxGrade
+        );
         String jobId = asyncSolveService.submit(problem);
         return ResponseEntity.accepted().body(Map.of("jobId", jobId));
     }

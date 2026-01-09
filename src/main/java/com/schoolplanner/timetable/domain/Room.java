@@ -11,7 +11,6 @@ public class Room {
     @PlanningId
     private String id;
     private RoomType roomType;
-    private int capacity;
 
     @Override
     public String toString() {

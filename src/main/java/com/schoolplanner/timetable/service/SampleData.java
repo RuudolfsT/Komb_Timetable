@@ -19,10 +19,10 @@ public class SampleData {
 
         List<TimeSlot> allTimeSlots = List.of(slot1_Mon_0900, slot2_Mon_1000, slot3_Mon_1100, slot3_Mon_1200, slot3_Mon_1300, slot3_Mon_1400);
 
-        Room room101 = new Room("101", RoomType.NORMAL, 30);
-        Room room102 = new Room("102", RoomType.NORMAL, 30);
-        Room chemLab = new Room("LAB_CHEM", RoomType.CHEMISTRY_LAB, 20);
-        Room gym = new Room("GYM", RoomType.GYM, 50);
+        Room room101 = new Room("101", RoomType.NORMAL);
+        Room room102 = new Room("102", RoomType.NORMAL);
+        Room chemLab = new Room("LAB_CHEM", RoomType.CHEMISTRY_LAB);
+        Room gym = new Room("GYM", RoomType.GYM);
 
         List<Room> allRooms = List.of(room101, room102, chemLab, gym);
 

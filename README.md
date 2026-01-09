@@ -41,17 +41,29 @@ REST galapunkti stundu saraksta ģenerēšanai. Visi atrodas zem `/api/timetable
    - Iesniedz problēmu, izmantojot CSV failu
    - Atgriež: `{ "jobId": "..." }`
 
-3. **Saņemt darba statusu**
+3. **Ģenerēt un risināt nejaušu problēmu**
+   - `POST /api/timetable/jobs/create-problem`
+   - Ģenerē nejaušu stundu saraksta problēmu un automātiski sāk to risināt
+   - Opcionālie parametri (query parameters):
+     - `numClasses` (noklusējums: 5) - Skolu klašu skaits
+     - `numTeachers` (noklusējums: 8) - Skolotāju skaits
+     - `numRooms` (noklusējums: 10) - Telpu skaits
+     - `lessonsPerClass` (noklusējums: 6) - Vidējais stundu skaits uz klasi
+     - `minGrade` (noklusējums: 1) - Minimālais klases līmenis
+     - `maxGrade` (noklusējums: 12) - Maksimālais klases līmenis
+   - Atgriež: `{ "jobId": "..." }`
+
+4. **Saņemt darba statusu**
    - `GET /api/timetable/jobs/{jobId}`
    - Saņem konkrēta darba statusu
    - Atgriež: `{ "jobId": "...", "status": "..." }`
 
-4. **Saņemt risinājumu**
+5. **Saņemt risinājumu**
    - `GET /api/timetable/jobs/{jobId}/solution`
    - Saņem pabeigta darba risinājumu
    - Atgriež: Stundu sarakstu ar skaidrojumu
 
-5. **Saņemt visus darbus**
+6. **Saņemt visus darbus**
    - `GET /api/timetable/alljobs`
    - Saņem visu darbu statusus
    - Atgriež: karti ar darba ID un statusiem
@@ -64,12 +76,24 @@ REST galapunkti stundu saraksta ģenerēšanai. Visi atrodas zem `/api/timetable
    ```
    Atbilde: `{"jobId": "abc123"}`
 
-2. **Pārbauda darba statusu:**
+2. **Ģenerē un risina nejaušu problēmu (ar noklusējuma parametriem):**
+   ```bash
+   curl -X POST http://localhost:8080/api/timetable/jobs/create-problem
+   ```
+   Atbilde: `{"jobId": "xyz789"}`
+
+3. **Ģenerē un risina nejaušu problēmu (ar pielāgotiem parametriem):**
+   ```bash
+   curl -X POST "http://localhost:8080/api/timetable/jobs/create-problem?numClasses=6&numTeachers=10&numRooms=12&lessonsPerClass=7&minGrade=1&maxGrade=9"
+   ```
+   Atbilde: `{"jobId": "def456"}`
+
+4. **Pārbauda darba statusu:**
    ```bash
    curl http://localhost:8080/api/timetable/jobs/abc123
    ```
 
-3. **Saņem risinājumu (kad pabeigts):**
+5. **Saņem risinājumu (kad pabeigts):**
    ```bash
    curl http://localhost:8080/api/timetable/jobs/abc123/solution
    ```
