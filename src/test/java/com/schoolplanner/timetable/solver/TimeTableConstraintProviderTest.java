@@ -12,7 +12,8 @@ class TimeTableConstraintProviderTest {
 
     Room room101 = new Room("101", RoomType.NORMAL, 30);
     Room room102 = new Room("102", RoomType.NORMAL, 30);
-    Room gym1 = new Room("102", RoomType.GYM, 30);
+    Room room103 = new Room("103", RoomType.NORMAL, 30);
+    Room gym1 = new Room("104", RoomType.GYM, 30);
 
     TimeSlot slot_Mon_0900 = new TimeSlot(1L, SchoolDay.MONDAY, LocalTime.of(9, 0), LocalTime.of(9, 40));
     TimeSlot slot_Mon_1000 = new TimeSlot(2L, SchoolDay.MONDAY, LocalTime.of(10, 0), LocalTime.of(10, 40));
@@ -451,6 +452,48 @@ class TimeTableConstraintProviderTest {
                 .penalizesBy(1);
 
         constraintVerifier.verifyThat(TimeTableConstraintProvider::teacherRoomStability)
+                .given(firstLesson, nonConflictingLesson)
+                .penalizesBy(0);
+    }
+
+    @Test
+    void schoolClassLessonRoomStability() {
+        anna.setId("T1");
+        anna.setFirstName("Anna");
+        anna.setLastName("Ozola");
+        anna.setQualifiedUnits(Set.of(math7, chem7));
+        anna.setWorkTimeSlots(new HashSet<>(List.of(slot_Mon_0900, slot_Mon_1000)));
+        anna.setHomeRoom(room101);
+
+        Lesson firstLesson = new Lesson(101L, chem7, class7A);
+        firstLesson.setTimeSlot(slot_Mon_0900);
+        firstLesson.setRoom(room101);
+        firstLesson.setTeacher(anna);
+
+        Lesson conflictingLesson = new Lesson(102L, chem7, class7A);
+        conflictingLesson.setTimeSlot(slot_Mon_1000);
+        conflictingLesson.setRoom(room102);
+        conflictingLesson.setTeacher(anna);
+
+        Lesson conflictingLesson_2 = new Lesson(103L, chem7, class7A);
+        conflictingLesson_2.setTimeSlot(slot_Mon_1100);
+        conflictingLesson_2.setRoom(room103);
+        conflictingLesson_2.setTeacher(anna);
+
+        Lesson nonConflictingLesson = new Lesson(104L, chem7, class7A);
+        nonConflictingLesson.setTimeSlot(slot_Mon_1200);
+        nonConflictingLesson.setRoom(room101);
+        nonConflictingLesson.setTeacher(anna);
+
+        constraintVerifier.verifyThat(TimeTableConstraintProvider::schoolClassLessonRoomStability)
+                .given(firstLesson, conflictingLesson)
+                .penalizesBy(3);
+
+        constraintVerifier.verifyThat(TimeTableConstraintProvider::schoolClassLessonRoomStability)
+                .given(firstLesson, conflictingLesson, conflictingLesson_2)
+                .penalizesBy(6);
+
+        constraintVerifier.verifyThat(TimeTableConstraintProvider::schoolClassLessonRoomStability)
                 .given(firstLesson, nonConflictingLesson)
                 .penalizesBy(0);
     }

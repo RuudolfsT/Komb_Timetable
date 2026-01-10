@@ -29,6 +29,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 subjectMustBeConsecutive(constraintFactory),
 
                 // Soft Constraints
+                schoolClassLessonRoomStability(constraintFactory),
                 teacherRoomStability(constraintFactory),
                 studentGaps(constraintFactory),
                 teacherGaps(constraintFactory),
@@ -163,6 +164,38 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 .asConstraint("One teacher per unit per class");
     }
 
+    // Katrai klasei ir savs pusdienu laiks, kurā nedrīkst būt stundas
+    Constraint lunchGroupConstraint(ConstraintFactory factory) {
+        return factory.forEach(Lesson.class)
+                .join(LunchGroup.class,
+                        Joiners.filtering((lesson, group) ->
+                                group.appliesToGrade(
+                                        lesson.getSchoolClass().getGrade()
+                                )
+                        )
+                )
+                .filter((lesson, group) ->
+                        group.getLunchTimeSlots()
+                                .contains(lesson.getTimeSlot())
+                )
+                .penalize(HardSoftScore.ONE_HARD)
+                .asConstraint("Lessons cannot overlap lunch");
+    }
+
+    // Priekšmets tiek vienmēr pasniegts tajā pašā telpā
+    Constraint schoolClassLessonRoomStability(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Lesson.class)
+                .filter(lesson -> lesson.getRoom() != null)
+                .groupBy(
+                        Lesson::getSchoolClass,
+                        Lesson::getTeachingUnit,
+                        ConstraintCollectors.countDistinct(Lesson::getRoom)
+                )
+                .filter((schoolClass, teachingUnit, distinctRoomCount) -> distinctRoomCount > 1)
+                .penalize(HardSoftScore.ONE_SOFT, (schoolClass, teachingUnit, distinctRoomCount) -> (distinctRoomCount - 1) * 3)
+                .asConstraint("One room for teachingUnit");
+    }
+
     // Skolotājam vēlas pasniegt stundu savā klasē
     Constraint teacherRoomStability(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
@@ -199,24 +232,6 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                             return calculateGaps(slotIds);
                         })
                 .asConstraint("Teacher gaps per day");
-    }
-
-    // Katrai klasei ir savs pusdienu laiks, kurā nedrīkst būt stundas
-    Constraint lunchGroupConstraint(ConstraintFactory factory) {
-        return factory.forEach(Lesson.class)
-                .join(LunchGroup.class,
-                        Joiners.filtering((lesson, group) ->
-                                group.appliesToGrade(
-                                        lesson.getSchoolClass().getGrade()
-                                )
-                        )
-                )
-                .filter((lesson, group) ->
-                        group.getLunchTimeSlots()
-                                .contains(lesson.getTimeSlot())
-                )
-                .penalize(HardSoftScore.ONE_HARD)
-                .asConstraint("Lessons cannot overlap lunch");
     }
 
     // Skolēni vēlas pēc iespējas īsāku dienu

@@ -61,14 +61,14 @@ public class GenerateFromCsv {
                         grade + "A",
                         grade
                 );
-                SchoolClass schoolClassB = new SchoolClass(
-                        ++classIdCounter,
-                        grade + "B",
-                        grade
-                );
+//                SchoolClass schoolClassB = new SchoolClass(
+//                        ++classIdCounter,
+//                        grade + "B",
+//                        grade
+//                );
 
                 schoolClasses.add(schoolClassA);
-                schoolClasses.add(schoolClassB);
+//                schoolClasses.add(schoolClassB);
 
                 for (int i = 1; i < columns.length; i++) {
                     if (i >= headers.length) break;
@@ -99,7 +99,7 @@ public class GenerateFromCsv {
 
                     for (int k = 0; k < count; k++) {
                         lessons.add(new Lesson(++lessonIdCounter, unit, schoolClassA));
-                        lessons.add(new Lesson(++lessonIdCounter, unit, schoolClassB));
+//                        lessons.add(new Lesson(++lessonIdCounter, unit, schoolClassB));
                     }
                 }
             }
