@@ -229,7 +229,8 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 .penalize(HardSoftScore.ONE_SOFT,
                         (schoolClass, day, slotIds) -> {
                             int lengthPenalty = dayLengthPenalty(slotIds);
-                            return lengthPenalty * lengthPenalty;
+                            int startPenalty = dayStartPenalty(slotIds);
+                            return lengthPenalty * lengthPenalty + startPenalty * startPenalty;
                         })
                 .asConstraint("Evenly spread lessons per day");
     }
@@ -257,7 +258,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
             long next = slotIds.get(i + 1);
 
             if (next - current > 1) {
-                penalty++;
+                penalty += (int)(next - current - 1);
             }
         }
         return penalty;
@@ -267,6 +268,17 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
         if (slotIds.isEmpty()) return 0;
         Long maxAbsoluteId = Collections.max(slotIds);
         long normalizedId = ((maxAbsoluteId - 1) % 10) - 6;
+        if (normalizedId > 0) {
+            return (int) normalizedId;
+        } else {
+            return 0;
+        }
+    }
+
+    private int dayStartPenalty(List<Long> slotIds) {
+        if (slotIds.isEmpty()) return 0;
+        Long minAbsoluteId = Collections.min(slotIds);
+        long normalizedId = ((minAbsoluteId - 1) % 10);
         if (normalizedId > 0) {
             return (int) normalizedId;
         } else {
