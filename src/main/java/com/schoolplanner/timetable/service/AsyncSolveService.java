@@ -27,9 +27,8 @@ public class AsyncSolveService {
         String jobId = UUID.randomUUID().toString();
         SolveJob job = new SolveJob(jobId);
         jobs.put(jobId, job);
-
+        job.setStatus(SolveStatus.SOLVING);
         CompletableFuture.runAsync(() -> {
-            job.setStatus(SolveStatus.SOLVING);
             try {
                 // Mēģina risināt problēmu
                 TimeTable solution = timeTableService.solve(problem);

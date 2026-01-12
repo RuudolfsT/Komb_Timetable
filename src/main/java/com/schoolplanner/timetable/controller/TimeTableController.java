@@ -47,6 +47,14 @@ public class TimeTableController {
         return ResponseEntity.accepted().body(Map.of("jobId", jobId));
     }
 
+    @PostMapping("/jobs/smalldemo")
+    public ResponseEntity<Map<String, String>> submitSmallDemo() {
+
+        TimeTable problem = SampleData.smallDemo();
+        String jobId = asyncSolveService.submit(problem);
+        return ResponseEntity.accepted().body(Map.of("jobId", jobId));
+    }
+
     // Izgūst risinājuma statusu
     @GetMapping("/jobs/{jobId}")
     public ResponseEntity<Map<String, Object>> getJobStatus(

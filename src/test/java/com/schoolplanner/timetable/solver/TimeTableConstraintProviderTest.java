@@ -10,10 +10,10 @@ import java.util.Set;
 
 class TimeTableConstraintProviderTest {
 
-    Room room101 = new Room("101", RoomType.NORMAL, 30);
-    Room room102 = new Room("102", RoomType.NORMAL, 30);
-    Room room103 = new Room("103", RoomType.NORMAL, 30);
-    Room gym1 = new Room("104", RoomType.GYM, 30);
+    Room room101 = new Room("101", RoomType.NORMAL);
+    Room room102 = new Room("102", RoomType.NORMAL);
+    Room room103 = new Room("103", RoomType.NORMAL);
+    Room gym1 = new Room("104", RoomType.GYM);
 
     TimeSlot slot_Mon_0900 = new TimeSlot(1L, SchoolDay.MONDAY, LocalTime.of(9, 0), LocalTime.of(9, 40));
     TimeSlot slot_Mon_1000 = new TimeSlot(2L, SchoolDay.MONDAY, LocalTime.of(10, 0), LocalTime.of(10, 40));
