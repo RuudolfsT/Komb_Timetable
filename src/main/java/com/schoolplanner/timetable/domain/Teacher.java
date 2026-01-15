@@ -17,6 +17,5 @@ public class Teacher {
     private String lastName;
     private Room homeRoom; // kabinets, kurā ikdienā strādā skolotāja
     private Set<TeachingUnit> qualifiedUnits; // skolotāja var pasniegt sākumskolas matemātiku, bet ne vidusskolas
-    private Map<SchoolDay, List<TimeRange>> workingHours; // priekš skolotāju darba laika input
     private Set<TimeSlot> workTimeSlots; // solver draudzīga versija
 }
