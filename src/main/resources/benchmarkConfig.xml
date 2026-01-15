@@ -19,7 +19,8 @@
             </scoreDirectorFactory>
 
             <termination>
-                <secondsSpentLimit>30</secondsSpentLimit>
+                <secondsSpentLimit>120</secondsSpentLimit>
+                <bestScoreLimit>0hard/0soft</bestScoreLimit>
             </termination>
         </solver>
     </inheritedSolverBenchmark>

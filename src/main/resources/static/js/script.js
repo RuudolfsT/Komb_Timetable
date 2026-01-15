@@ -6,6 +6,7 @@ let solutionLessons = [];
 let lessonsByClass = {};
 let sortedTimeSlots = [];
 let classInfoMap = new Map(); // className -> { name, grade }
+let lunchGroups = []; // Store lunch groups from the solution
 
 function showStatus(message, type) {
     const el = document.getElementById('status');
@@ -134,39 +135,51 @@ function displayConstraintMatches(constraintMatches) {
 function formatTime(time) { return time ? time.substring(0,5) : 'N/A'; }
 function getTimeSlotKey(ts) { return ts && ts.schoolDay && ts.startTime ? `${ts.schoolDay}_${ts.startTime}` : null; }
 
-function isLunchBreak(grade, startTime, endTime) {
-    if (!grade || !startTime || !endTime) return false;
+// Helper to convert time to minutes - handles both string "HH:mm" and array [H, M] formats
+function timeToMinutes(time) {
+    if (!time) return null;
     
-    // Extract time in HH:mm format (handle both "HH:mm" and "HH:mm:ss" formats)
-    const start = startTime.substring(0, 5);
-    const end = endTime.substring(0, 5);
+    // Handle array format [hours, minutes] (Jackson default for LocalTime)
+    if (Array.isArray(time)) {
+        return time[0] * 60 + (time[1] || 0);
+    }
     
-    // Convert to comparable format (minutes since midnight)
-    function timeToMinutes(timeStr) {
-        const [hours, minutes] = timeStr.split(':').map(Number);
+    // Handle string format "HH:mm" or "HH:mm:ss"
+    if (typeof time === 'string') {
+        const [hours, minutes] = time.substring(0, 5).split(':').map(Number);
         return hours * 60 + minutes;
     }
     
-    const startMins = timeToMinutes(start);
-    const endMins = timeToMinutes(end);
+    return null;
+}
+
+function isLunchBreak(grade, startTime, endTime) {
+    if (!grade || !startTime || !endTime || !lunchGroups || lunchGroups.length === 0) return false;
     
-    // Grades 1-6: lunch from 10:10 to 11:50
-    // A time slot overlaps lunch if: start < 11:50 && end > 10:10
-    if (grade >= 1 && grade <= 6) {
-        const lunchStart = timeToMinutes('10:10');
-        const lunchEnd = timeToMinutes('11:50');
-        return startMins < lunchEnd && endMins > lunchStart;
+    // Find the lunch group that applies to this grade
+    const lunchGroup = lunchGroups.find(lg => 
+        lg.minGrade <= grade && grade <= lg.maxGrade
+    );
+    
+    if (!lunchGroup || !lunchGroup.lunchTimeSlots || lunchGroup.lunchTimeSlots.length === 0) {
+        return false;
     }
     
-    // Grades 7-12: lunch from 11:00 to 12:40
-    // A time slot overlaps lunch if: start < 12:40 && end > 11:00
-    if (grade >= 7 && grade <= 12) {
-        const lunchStart = timeToMinutes('11:00');
-        const lunchEnd = timeToMinutes('12:40');
-        return startMins < lunchEnd && endMins > lunchStart;
-    }
+    const startMins = timeToMinutes(startTime);
+    const endMins = timeToMinutes(endTime);
     
-    return false;
+    if (startMins === null || endMins === null) return false;
+    
+    // Check if the time slot overlaps with any lunch time slot
+    return lunchGroup.lunchTimeSlots.some(lunchSlot => {
+        const lunchStartMins = timeToMinutes(lunchSlot.startTime);
+        const lunchEndMins = timeToMinutes(lunchSlot.endTime);
+        
+        if (lunchStartMins === null || lunchEndMins === null) return false;
+        
+        // A time slot overlaps lunch if: start < lunchEnd && end > lunchStart
+        return startMins < lunchEndMins && endMins > lunchStartMins;
+    });
 }
 function compareTimeSlots(a, b) {
     const dA = DAY_ORDER.indexOf(a.schoolDay);
@@ -202,6 +215,7 @@ async function fetchSolution() {
 
 function handleSolution(data) {
     solutionLessons = data.lessons || [];
+    lunchGroups = data.lunchGroups || [];
     if (solutionLessons.length === 0) {
         document.getElementById('emptyState').style.display = 'block';
         return;
@@ -233,6 +247,18 @@ function handleSolution(data) {
             if (key && !timeSlotMap.has(key)) {
                 timeSlotMap.set(key, lesson.timeSlot);
             }
+        }
+    });
+
+    // Also include lunch time slots so they appear in the timetable even if no lesson is scheduled
+    lunchGroups.forEach(lg => {
+        if (lg.lunchTimeSlots) {
+            lg.lunchTimeSlots.forEach(ts => {
+                const key = getTimeSlotKey(ts);
+                if (key && !timeSlotMap.has(key)) {
+                    timeSlotMap.set(key, ts);
+                }
+            });
         }
     });
 
@@ -313,7 +339,26 @@ function renderTableForClass(className) {
     uniqueTimes.forEach(v => timeRows.push(v));
     timeRows.sort((a,b) => a.start.localeCompare(b.start));
 
-    timeRows.forEach(t => {
+    // Filter out lunch time slots that don't apply to this class's grade
+    const filteredTimeRows = timeRows.filter(t => {
+        // Check if this time slot is a lunch slot for a DIFFERENT grade group
+        const isLunchForOtherGrade = lunchGroups.some(lg => {
+            // Check if this lunch group does NOT apply to this class
+            const appliesToThisClass = classGrade && lg.minGrade <= classGrade && classGrade <= lg.maxGrade;
+            if (appliesToThisClass) return false; // This lunch group applies to this class, don't filter out
+            
+            // Check if this time slot matches a lunch slot in this (other) lunch group
+            return lg.lunchTimeSlots && lg.lunchTimeSlots.some(lunchSlot => {
+                const lunchStart = lunchSlot.startTime;
+                const lunchEnd = lunchSlot.endTime;
+                return t.start === lunchStart && t.end === lunchEnd;
+            });
+        });
+        
+        return !isLunchForOtherGrade;
+    });
+
+    filteredTimeRows.forEach(t => {
         const row = document.createElement('tr');
         const timeTd = document.createElement('td');
         timeTd.textContent = `${formatTime(t.start)} - ${formatTime(t.end)}`;
