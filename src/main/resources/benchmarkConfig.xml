@@ -15,7 +15,7 @@
             </scoreDirectorFactory>
 
             <termination>
-                <secondsSpentLimit>300</secondsSpentLimit>
+                <secondsSpentLimit>400</secondsSpentLimit>
                 <unimprovedSecondsSpentLimit>5</unimprovedSecondsSpentLimit>
             </termination>
         </solver>

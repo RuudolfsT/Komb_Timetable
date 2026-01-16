@@ -87,7 +87,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                         countBi())
 
                 .filter((SchoolClass schoolClass, SchoolDay day, Integer lessonCount) -> {
-                    int totalLunchSlots = 2;
+                    int totalLunchSlots = 1;
                     return lessonCount >= totalLunchSlots;
                 })
 
