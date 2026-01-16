@@ -38,7 +38,8 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 teacherRoomStability(constraintFactory),
                 studentGaps(constraintFactory),
                 teacherGaps(constraintFactory),
-                evenlySpreadLessonsAndLessBefore(constraintFactory)
+                evenlySpreadLessonsAndLessBefore(constraintFactory),
+                balancedLessonsPerDay(constraintFactory)
         };
     }
 
@@ -90,7 +91,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                     return lessonCount >= totalLunchSlots;
                 })
 
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardSoftScore.ofHard(100))
                 .asConstraint("Student must take lunch (No full booking during lunch)");
     }
 
@@ -285,6 +286,18 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 .asConstraint("Evenly spread lessons per day");
     }
 
+    Constraint balancedLessonsPerDay(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Lesson.class)
+                .filter(lesson -> lesson.getTimeSlot() != null)
+                .groupBy(Lesson::getSchoolClass,
+                        ConstraintCollectors.toList())
+                .penalize(HardSoftScore.ONE_SOFT,
+                        (schoolClass, lessons) -> {
+                            return calculateWeeklyVariancePenalty(lessons);
+                        })
+                .asConstraint("Balanced lessons per day (Variance)");
+    }
+
     // helper functions
     private int calculateGaps(List<Long> slotIds) {
         if (slotIds.isEmpty()) return 0;
@@ -345,5 +358,30 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
         } else {
             return 0;
         }
+    }
+
+    private int calculateWeeklyVariancePenalty(List<Lesson> lessons) {
+        double totalLessons = lessons.size();
+
+        double averagePerDay = totalLessons / 5.0;
+
+        Map<SchoolDay, Long> countPerDayMap = lessons.stream()
+                .collect(Collectors.groupingBy(
+                        lesson -> lesson.getTimeSlot().getSchoolDay(),
+                        Collectors.counting()
+                ));
+
+        double totalPenalty = 0;
+
+        for (SchoolDay day : SchoolDay.values()) {
+
+            long actualCount = countPerDayMap.getOrDefault(day, 0L);
+
+            double diff = Math.abs(averagePerDay - actualCount);
+            double term = diff * 2;
+            totalPenalty += (term * term);
+        }
+
+        return (int) totalPenalty;
     }
 }
