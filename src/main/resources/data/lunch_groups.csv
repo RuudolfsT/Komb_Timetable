@@ -1,0 +1,5 @@
+name,minGrade,maxGrade,lunchStartTime,lunchEndTime
+Grades 1-3 lunch,1,3,10:10,11:00
+Grades 4-6 lunch,4,6,11:00,11:50
+Grades 7-9 lunch,7,9,11:50,12:40
+Grades 10-12 lunch,10,12,12:40,13:30

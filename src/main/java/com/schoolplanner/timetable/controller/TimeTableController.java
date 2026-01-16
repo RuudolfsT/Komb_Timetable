@@ -68,6 +68,14 @@ public class TimeTableController {
         return ResponseEntity.accepted().body(Map.of("jobId", jobId));
     }
 
+    // Ielādē problēmu no visiem CSV failiem (rooms.csv, teachers.csv, lunch_groups.csv, lesson_list.csv)
+    @PostMapping("/jobs/from-all-csv")
+    public ResponseEntity<Map<String, String>> submitFromAllCsvFiles() {
+        TimeTable problem = CsvDataLoader.generateFromAllCsvFiles();
+        String jobId = asyncSolveService.submit(problem);
+        return ResponseEntity.accepted().body(Map.of("jobId", jobId));
+    }
+
     // Izgūst risinājuma statusu
     @GetMapping("/jobs/{jobId}")
     public ResponseEntity<Map<String, Object>> getJobStatus(
