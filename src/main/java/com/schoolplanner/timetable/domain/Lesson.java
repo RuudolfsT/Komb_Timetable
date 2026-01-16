@@ -3,19 +3,18 @@ package com.schoolplanner.timetable.domain;
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-@PlanningEntity
 @Getter
 @Setter
 @NoArgsConstructor
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@PlanningEntity(difficultyComparatorClass = LessonDifficultyComparator.class)
 public class Lesson {
 
     @PlanningId
+    @EqualsAndHashCode.Include
     private Long id;
 
     private TeachingUnit teachingUnit;

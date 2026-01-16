@@ -582,52 +582,52 @@ class TimeTableConstraintProviderTest {
                 .penalizesBy(0);
     }
 
-    @Test
-    void lunchGroupConstraint() {
-        anna.setId("T1");
-        anna.setFirstName("Anna");
-        anna.setLastName("Ozola");
-        anna.setQualifiedUnits(Set.of(math7, chem7));
-        anna.setWorkTimeSlots(new HashSet<>(List.of(slot_Mon_0900, slot_Mon_1000)));
-        anna.setHomeRoom(room101);
-
-        Lesson firstLesson_7 = new Lesson(101L, chem7, class7A);
-        firstLesson_7.setTimeSlot(slot_Mon_0900);
-        firstLesson_7.setRoom(room101);
-        firstLesson_7.setTeacher(anna);
-
-        Lesson conflictingLesson_7 = new Lesson(102L, math7, class7A);
-        conflictingLesson_7.setTimeSlot(slot_Mon_1300);
-        conflictingLesson_7.setRoom(room101);
-        conflictingLesson_7.setTeacher(anna);
-
-        Lesson firstLesson_6 = new Lesson(103L, chem7, class6A);
-        firstLesson_6.setTimeSlot(slot_Mon_1000);
-        firstLesson_6.setRoom(room101);
-        firstLesson_6.setTeacher(anna);
-
-        Lesson conflictingLesson_6 = new Lesson(104L, math7, class6A);
-        conflictingLesson_6.setTimeSlot(slot_Mon_1200);
-        conflictingLesson_6.setRoom(room101);
-        conflictingLesson_6.setTeacher(anna);
-
-        Lesson nonConflictingLesson_6 = new Lesson(105L, math7, class6A);
-        nonConflictingLesson_6.setTimeSlot(slot_Mon_1300);
-        nonConflictingLesson_6.setRoom(room101);
-        nonConflictingLesson_6.setTeacher(anna);
-
-        constraintVerifier.verifyThat(TimeTableConstraintProvider::lunchGroupConstraint)
-                .given(lunch1_6, lunch7_12, firstLesson_7, conflictingLesson_7)
-                .penalizesBy(1);
-
-        constraintVerifier.verifyThat(TimeTableConstraintProvider::lunchGroupConstraint)
-                .given(lunch1_6, lunch7_12, firstLesson_6, conflictingLesson_6)
-                .penalizesBy(1);
-
-        constraintVerifier.verifyThat(TimeTableConstraintProvider::lunchGroupConstraint)
-                .given(lunch1_6, lunch7_12, firstLesson_6, nonConflictingLesson_6)
-                .penalizesBy(0);
-    }
+//    @Test
+//    void lunchGroupConstraint() {
+//        anna.setId("T1");
+//        anna.setFirstName("Anna");
+//        anna.setLastName("Ozola");
+//        anna.setQualifiedUnits(Set.of(math7, chem7));
+//        anna.setWorkTimeSlots(new HashSet<>(List.of(slot_Mon_0900, slot_Mon_1000)));
+//        anna.setHomeRoom(room101);
+//
+//        Lesson firstLesson_7 = new Lesson(101L, chem7, class7A);
+//        firstLesson_7.setTimeSlot(slot_Mon_0900);
+//        firstLesson_7.setRoom(room101);
+//        firstLesson_7.setTeacher(anna);
+//
+//        Lesson conflictingLesson_7 = new Lesson(102L, math7, class7A);
+//        conflictingLesson_7.setTimeSlot(slot_Mon_1300);
+//        conflictingLesson_7.setRoom(room101);
+//        conflictingLesson_7.setTeacher(anna);
+//
+//        Lesson firstLesson_6 = new Lesson(103L, chem7, class6A);
+//        firstLesson_6.setTimeSlot(slot_Mon_1000);
+//        firstLesson_6.setRoom(room101);
+//        firstLesson_6.setTeacher(anna);
+//
+//        Lesson conflictingLesson_6 = new Lesson(104L, math7, class6A);
+//        conflictingLesson_6.setTimeSlot(slot_Mon_1200);
+//        conflictingLesson_6.setRoom(room101);
+//        conflictingLesson_6.setTeacher(anna);
+//
+//        Lesson nonConflictingLesson_6 = new Lesson(105L, math7, class6A);
+//        nonConflictingLesson_6.setTimeSlot(slot_Mon_1300);
+//        nonConflictingLesson_6.setRoom(room101);
+//        nonConflictingLesson_6.setTeacher(anna);
+//
+//        constraintVerifier.verifyThat(TimeTableConstraintProvider::lunchGroupConstraint)
+//                .given(lunch1_6, lunch7_12, firstLesson_7, conflictingLesson_7)
+//                .penalizesBy(1);
+//
+//        constraintVerifier.verifyThat(TimeTableConstraintProvider::lunchGroupConstraint)
+//                .given(lunch1_6, lunch7_12, firstLesson_6, conflictingLesson_6)
+//                .penalizesBy(1);
+//
+//        constraintVerifier.verifyThat(TimeTableConstraintProvider::lunchGroupConstraint)
+//                .given(lunch1_6, lunch7_12, firstLesson_6, nonConflictingLesson_6)
+//                .penalizesBy(0);
+//    }
 
     @Test
     void evenlySpreadLessonsAndLessBefore() {

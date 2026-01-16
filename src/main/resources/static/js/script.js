@@ -339,26 +339,51 @@ function renderTableForClass(className) {
     uniqueTimes.forEach(v => timeRows.push(v));
     timeRows.sort((a,b) => a.start.localeCompare(b.start));
 
-    // Filter out lunch time slots that don't apply to this class's grade
-    const filteredTimeRows = timeRows.filter(t => {
-        // Check if this time slot is a lunch slot for a DIFFERENT grade group
-        const isLunchForOtherGrade = lunchGroups.some(lg => {
-            // Check if this lunch group does NOT apply to this class
-            const appliesToThisClass = classGrade && lg.minGrade <= classGrade && classGrade <= lg.maxGrade;
-            if (appliesToThisClass) return false; // This lunch group applies to this class, don't filter out
-            
-            // Check if this time slot matches a lunch slot in this (other) lunch group
-            return lg.lunchTimeSlots && lg.lunchTimeSlots.some(lunchSlot => {
-                const lunchStart = lunchSlot.startTime;
-                const lunchEnd = lunchSlot.endTime;
-                return t.start === lunchStart && t.end === lunchEnd;
-            });
-        });
-        
-        return !isLunchForOtherGrade;
-    });
+    // // Filter out lunch time slots that don't apply to this class's grade
+    // const filteredTimeRows = timeRows.filter(t => {
+    //     // Check if this time slot is a lunch slot for a DIFFERENT grade group
+    //     const isLunchForOtherGrade = lunchGroups.some(lg => {
+    //         // Check if this lunch group does NOT apply to this class
+    //         const appliesToThisClass = classGrade && lg.minGrade <= classGrade && classGrade <= lg.maxGrade;
+    //         if (appliesToThisClass) return false; // This lunch group applies to this class, don't filter out
+    //
+    //         // Check if this time slot matches a lunch slot in this (other) lunch group
+    //         return lg.lunchTimeSlots && lg.lunchTimeSlots.some(lunchSlot => {
+    //             const lunchStart = lunchSlot.startTime;
+    //             const lunchEnd = lunchSlot.endTime;
+    //             return t.start === lunchStart && t.end === lunchEnd;
+    //         });
+    //     });
+    //
+    //     return !isLunchForOtherGrade;
+    // });
+    //
+    // filteredTimeRows.forEach(t => {
+    //     const row = document.createElement('tr');
+    //     const timeTd = document.createElement('td');
+    //     timeTd.textContent = `${formatTime(t.start)} - ${formatTime(t.end)}`;
+    //     row.appendChild(timeTd);
+    //
+    //     DAY_ORDER.forEach(day => {
+    //         const key = `${day}_${t.start}_${t.end}`;
+    //         const lesson = lessonMap.get(key);
+    //         const td = document.createElement('td');
+    //         if (lesson) {
+    //             td.innerHTML = renderLesson(lesson);
+    //         } else {
+    //             // Check if this is a lunch break
+    //             if (classGrade && isLunchBreak(classGrade, t.start, t.end)) {
+    //                 td.innerHTML = '<div class="lunch-break">Lunch break</div>';
+    //             } else {
+    //                 td.innerHTML = '<span class="empty">—</span>';
+    //             }
+    //         }
+    //         row.appendChild(td);
+    //     });
+    //     tbody.appendChild(row);
+    // });
 
-    filteredTimeRows.forEach(t => {
+    timeRows.forEach(t => {  // Changed from filteredTimeRows.forEach to timeRows.forEach
         const row = document.createElement('tr');
         const timeTd = document.createElement('td');
         timeTd.textContent = `${formatTime(t.start)} - ${formatTime(t.end)}`;

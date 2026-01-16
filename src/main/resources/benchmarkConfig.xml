@@ -2,59 +2,98 @@
 <plannerBenchmark>
     <benchmarkDirectory>target/benchmarks</benchmarkDirectory>
 
+    <parallelBenchmarkCount>AUTO</parallelBenchmarkCount>
+    <warmUpSecondsSpentLimit>5</warmUpSecondsSpentLimit>
+
     <inheritedSolverBenchmark>
         <solver>
-            <solutionClass>
-                com.schoolplanner.timetable.domain.TimeTable
-            </solutionClass>
-
-            <entityClass>
-                com.schoolplanner.timetable.domain.Lesson
-            </entityClass>
+            <solutionClass>com.schoolplanner.timetable.domain.TimeTable</solutionClass>
+            <entityClass>com.schoolplanner.timetable.domain.Lesson</entityClass>
 
             <scoreDirectorFactory>
-                <constraintProviderClass>
-                    com.schoolplanner.timetable.solver.TimeTableConstraintProvider
-                </constraintProviderClass>
+                <constraintProviderClass>com.schoolplanner.timetable.solver.TimeTableConstraintProvider</constraintProviderClass>
             </scoreDirectorFactory>
 
             <termination>
-                <secondsSpentLimit>120</secondsSpentLimit>
-                <bestScoreLimit>0hard/0soft</bestScoreLimit>
+                <secondsSpentLimit>300</secondsSpentLimit>
+                <unimprovedSecondsSpentLimit>5</unimprovedSecondsSpentLimit>
             </termination>
         </solver>
     </inheritedSolverBenchmark>
+
     <solverBenchmark>
-        <name>Timefold Default (Baseline)</name>
+        <name>FF Tabu Search</name>
         <solver>
-            <solverConfigFile>solverConfig.xml</solverConfigFile>
+            <constructionHeuristic>
+                <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+            </constructionHeuristic>
+            <localSearch>
+                <localSearchType>TABU_SEARCH</localSearchType>
+            </localSearch>
         </solver>
     </solverBenchmark>
 
     <solverBenchmark>
-        <name>FIRST_FIT_TABU</name>
-        <solverConfig inherit="true">
+        <name>FFD Tabu Search</name>
+        <solver>
+            <constructionHeuristic>
+                <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
+            </constructionHeuristic>
+            <localSearch>
+                <localSearchType>TABU_SEARCH</localSearchType>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>FF Late_Acceptance</name>
+        <solver>
             <constructionHeuristic>
                 <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+            </constructionHeuristic>
+
+            <localSearch>
+                <localSearchType>LATE_ACCEPTANCE</localSearchType>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>FFD Late Acceptance</name>
+        <solver>
+            <constructionHeuristic>
+                <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
+            </constructionHeuristic>
+
+            <localSearch>
+                <localSearchType>LATE_ACCEPTANCE</localSearchType>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>AEFQ Tabu Search</name>
+        <solver>
+            <constructionHeuristic>
+                <constructionHeuristicType>ALLOCATE_ENTITY_FROM_QUEUE</constructionHeuristicType>
             </constructionHeuristic>
 
             <localSearch>
                 <localSearchType>TABU_SEARCH</localSearchType>
             </localSearch>
-        </solverConfig>
+        </solver>
     </solverBenchmark>
 
     <solverBenchmark>
-        <name>FIRST_FIT_SIMULATED_ANNEALING</name>
-        <solverConfig inherit="true">
+        <name>AEFQ Late Acceptance</name>
+        <solver>
             <constructionHeuristic>
-                <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+                <constructionHeuristicType>ALLOCATE_ENTITY_FROM_QUEUE</constructionHeuristicType>
             </constructionHeuristic>
 
             <localSearch>
-                <localSearchType>SIMULATED_ANNEALING</localSearchType>
+                <localSearchType>LATE_ACCEPTANCE</localSearchType>
             </localSearch>
-        </solverConfig>
+        </solver>
     </solverBenchmark>
-
 </plannerBenchmark>

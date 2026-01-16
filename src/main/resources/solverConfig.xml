@@ -15,6 +15,21 @@
     </scoreDirectorFactory>
 
     <termination>
-        <secondsSpentLimit>90</secondsSpentLimit>
+        <secondsSpentLimit>300</secondsSpentLimit>
+        <unimprovedSecondsSpentLimit>5</unimprovedSecondsSpentLimit>
+        <bestScoreLimit>0hard/0soft</bestScoreLimit>
     </termination>
+
+    <constructionHeuristic>
+        <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+    </constructionHeuristic>
+
+    <localSearch>
+        <unionMoveSelector>
+            <changeMoveSelector/>
+            <swapMoveSelector/>
+        </unionMoveSelector>
+
+        <localSearchType>TABU_SEARCH</localSearchType>
+    </localSearch>
 </solver>

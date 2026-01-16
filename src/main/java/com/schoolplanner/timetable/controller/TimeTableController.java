@@ -4,10 +4,7 @@ import com.schoolplanner.timetable.controller.dto.SolveJob;
 import com.schoolplanner.timetable.controller.dto.SolveStatus;
 import com.schoolplanner.timetable.controller.dto.TimeTableResponse;
 import com.schoolplanner.timetable.domain.TimeTable;
-import com.schoolplanner.timetable.service.AsyncSolveService;
-import com.schoolplanner.timetable.service.GenerateFromCsv;
-import com.schoolplanner.timetable.service.SampleData;
-import com.schoolplanner.timetable.service.TimeTableService;
+import com.schoolplanner.timetable.service.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -51,6 +48,14 @@ public class TimeTableController {
     public ResponseEntity<Map<String, String>> submitSmallDemo() {
 
         TimeTable problem = SampleData.smallDemo();
+        String jobId = asyncSolveService.submit(problem);
+        return ResponseEntity.accepted().body(Map.of("jobId", jobId));
+    }
+
+    @PostMapping("/jobs/testcase")
+    public ResponseEntity<Map<String, String>> submitTestCase() {
+
+        TimeTable problem = TestCase.testCase();
         String jobId = asyncSolveService.submit(problem);
         return ResponseEntity.accepted().body(Map.of("jobId", jobId));
     }
