@@ -5,6 +5,7 @@ import com.schoolplanner.timetable.controller.dto.SolveStatus;
 import com.schoolplanner.timetable.controller.dto.TimeTableResponse;
 import com.schoolplanner.timetable.domain.TimeTable;
 import com.schoolplanner.timetable.service.AsyncSolveService;
+import com.schoolplanner.timetable.service.CsvDataLoader;
 import com.schoolplanner.timetable.service.GenerateFromCsv;
 import com.schoolplanner.timetable.service.SampleData;
 import com.schoolplanner.timetable.service.TimeTableService;
@@ -51,6 +52,14 @@ public class TimeTableController {
     public ResponseEntity<Map<String, String>> submitSmallDemo() {
 
         TimeTable problem = SampleData.smallDemo();
+        String jobId = asyncSolveService.submit(problem);
+        return ResponseEntity.accepted().body(Map.of("jobId", jobId));
+    }
+
+    // Ielādē problēmu no visiem CSV failiem (rooms.csv, teachers.csv, lunch_groups.csv, lesson_list.csv)
+    @PostMapping("/jobs/from-all-csv")
+    public ResponseEntity<Map<String, String>> submitFromAllCsvFiles() {
+        TimeTable problem = CsvDataLoader.generateFromAllCsvFiles();
         String jobId = asyncSolveService.submit(problem);
         return ResponseEntity.accepted().body(Map.of("jobId", jobId));
     }
