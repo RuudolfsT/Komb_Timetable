@@ -674,31 +674,31 @@ class TimeTableConstraintProviderTest {
         nonConflictingLesson.setTeacher(anna);
 
         //Day length 8 lessons
-        constraintVerifier.verifyThat(TimeTableConstraintProvider::evenlySpreadLessonsAndLessBefore)
+        constraintVerifier.verifyThat(TimeTableConstraintProvider::lessLessonsBefore)
                 .given(firstLesson, conflictingLesson)
                 .penalizesBy(1);
 
         //Day length 9 lessons
-        constraintVerifier.verifyThat(TimeTableConstraintProvider::evenlySpreadLessonsAndLessBefore)
+        constraintVerifier.verifyThat(TimeTableConstraintProvider::lessLessonsBefore)
                 .given(firstLesson, conflictingLesson_2)
                 .penalizesBy(4);
 
         //Day length 10 lessons
-        constraintVerifier.verifyThat(TimeTableConstraintProvider::evenlySpreadLessonsAndLessBefore)
+        constraintVerifier.verifyThat(TimeTableConstraintProvider::lessLessonsBefore)
                 .given(firstLesson, conflictingLesson_3)
                 .penalizesBy(9);
 
         //Day starts on second lesson
-        constraintVerifier.verifyThat(TimeTableConstraintProvider::evenlySpreadLessonsAndLessBefore)
+        constraintVerifier.verifyThat(TimeTableConstraintProvider::lessLessonsBefore)
                 .given(secondLesson, nonConflictingLesson)
                 .penalizesBy(1);
 
         //Day starts on third lesson
-        constraintVerifier.verifyThat(TimeTableConstraintProvider::evenlySpreadLessonsAndLessBefore)
+        constraintVerifier.verifyThat(TimeTableConstraintProvider::lessLessonsBefore)
                 .given(thirdLesson, nonConflictingLesson)
                 .penalizesBy(4);
 
-        constraintVerifier.verifyThat(TimeTableConstraintProvider::evenlySpreadLessonsAndLessBefore)
+        constraintVerifier.verifyThat(TimeTableConstraintProvider::lessLessonsBefore)
                 .given(firstLesson, nonConflictingLesson)
                 .penalizesBy(0);
     }
