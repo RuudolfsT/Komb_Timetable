@@ -15,21 +15,37 @@
     </scoreDirectorFactory>
 
     <termination>
-        <secondsSpentLimit>400</secondsSpentLimit>
-        <unimprovedSecondsSpentLimit>5</unimprovedSecondsSpentLimit>
-        <bestScoreLimit>0hard/0soft</bestScoreLimit>
+        <terminationCompositionStyle>OR</terminationCompositionStyle>
+        <secondsSpentLimit>180</secondsSpentLimit>
+        <termination>
+            <terminationCompositionStyle>AND</terminationCompositionStyle>
+
+            <bestScoreLimit>0hard/-2147483648soft</bestScoreLimit>
+
+            <unimprovedSecondsSpentLimit>15</unimprovedSecondsSpentLimit>
+        </termination>
     </termination>
 
     <constructionHeuristic>
         <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
     </constructionHeuristic>
-
     <localSearch>
         <unionMoveSelector>
-            <changeMoveSelector/>
+            <changeMoveSelector><valueSelector variableName="timeSlot"/></changeMoveSelector>
+            <changeMoveSelector><valueSelector variableName="room"/></changeMoveSelector>
+
+            <cartesianProductMoveSelector>
+                <changeMoveSelector><valueSelector variableName="timeSlot"/></changeMoveSelector>
+                <changeMoveSelector><valueSelector variableName="room"/></changeMoveSelector>
+            </cartesianProductMoveSelector>
+
+            <pillarChangeMoveSelector>
+                <subPillarType>ALL_OR_NOTHING</subPillarType>
+                <valueSelector variableName="timeSlot"/>
+            </pillarChangeMoveSelector>
+
             <swapMoveSelector/>
         </unionMoveSelector>
-
         <localSearchType>TABU_SEARCH</localSearchType>
     </localSearch>
 </solver>

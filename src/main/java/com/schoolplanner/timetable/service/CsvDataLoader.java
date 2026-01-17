@@ -26,7 +26,8 @@ public class CsvDataLoader {
                 DEFAULT_ROOMS_PATH,
                 DEFAULT_TEACHERS_PATH,
                 DEFAULT_LUNCH_GROUPS_PATH,
-                DEFAULT_LESSONS_PATH
+                DEFAULT_LESSONS_PATH,
+                1
         );
     }
 
@@ -37,7 +38,8 @@ public class CsvDataLoader {
             String roomsCsvPath,
             String teachersCsvPath,
             String lunchGroupsCsvPath,
-            String lessonsCsvPath
+            String lessonsCsvPath,
+            int classCount
     ) {
         // Generate time slots first (needed for teachers and lunch groups)
         List<TimeSlot> timeSlots = generateTimeSlots();
@@ -50,7 +52,7 @@ public class CsvDataLoader {
         }
 
         // Parse lessons CSV to create teaching units and lessons
-        LessonParseResult lessonResult = parseLessonsCsv(lessonsCsvPath);
+        LessonParseResult lessonResult = parseLessonsCsv(lessonsCsvPath, classCount);
         List<TeachingUnit> allTeachingUnits = lessonResult.teachingUnits;
         List<SchoolClass> schoolClasses = lessonResult.schoolClasses;
         List<Lesson> lessons = lessonResult.lessons;
@@ -250,7 +252,7 @@ public class CsvDataLoader {
     /**
      * Parses lessons CSV and creates teaching units, school classes, and lessons.
      */
-    private static LessonParseResult parseLessonsCsv(String resourcePath) {
+    private static LessonParseResult parseLessonsCsv(String resourcePath, int classCount) {
         List<TeachingUnit> allTeachingUnits = new ArrayList<>();
         List<SchoolClass> schoolClasses = new ArrayList<>();
         List<Lesson> lessons = new ArrayList<>();
@@ -278,12 +280,21 @@ public class CsvDataLoader {
 
                 int grade = (int) Double.parseDouble(gradeStr);
 
-                SchoolClass schoolClass = new SchoolClass(
-                        ++classIdCounter,
-                        grade + "A",
-                        grade
-                );
-                schoolClasses.add(schoolClass);
+                List<SchoolClass> classesForThisRow = new ArrayList<>();
+
+                for (int i = 0; i < classCount; i++) {
+                    char classSuffix = (char) ('A' + i);
+
+                    SchoolClass schoolClass = new SchoolClass(
+                            ++classIdCounter,
+                            grade + String.valueOf(classSuffix),
+                            grade
+                    );
+
+                    schoolClasses.add(schoolClass);
+                    classesForThisRow.add(schoolClass);
+                }
+
 
                 for (int i = 1; i < columns.length; i++) {
                     if (i >= headers.length) break;
@@ -318,7 +329,9 @@ public class CsvDataLoader {
                     }
 
                     for (int k = 0; k < count; k++) {
-                        lessons.add(new Lesson(++lessonIdCounter, existingUnit, schoolClass));
+                        for (SchoolClass sClass : classesForThisRow) {
+                            lessons.add(new Lesson(++lessonIdCounter, existingUnit, sClass));
+                        }
                     }
                 }
             }

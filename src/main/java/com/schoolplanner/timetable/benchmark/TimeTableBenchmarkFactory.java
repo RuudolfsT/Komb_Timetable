@@ -8,11 +8,11 @@ import com.schoolplanner.timetable.service.TestCase;
 public class TimeTableBenchmarkFactory {
 
 //    public static TimeTable generateProblem() {
-//        return GenerateFromCsv.generateFromCsv("data/lesson_list.csv");
+//        return GenerateFromCsv.generateFromCsv("data/lesson_list_test.csv");
 //    }
-    public static TimeTable generateProblem() {
-        return CsvDataLoader.generateFromAllCsvFiles();
-    }
+//    public static TimeTable generateProblem() {
+//        return CsvDataLoader.generateFromAllCsvFiles();
+//    }
 //    public static TimeTable generateProblem() {
 //        return TestCase.testCase();
 //    }

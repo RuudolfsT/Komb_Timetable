@@ -47,7 +47,7 @@ public class TimeTableController {
     @PostMapping("/jobs/from-csv-test")
     public ResponseEntity<Map<String, String>> submitCsvTestProblem() {
 
-        TimeTable problem = GenerateFromCsv.generateFromCsv("data/lesson_list_test.csv");
+        TimeTable problem = GenerateFromCsv.generateFromCsv("data/lesson_list_678.csv");
         String jobId = asyncSolveService.submit(problem);
         return ResponseEntity.accepted().body(Map.of("jobId", jobId));
     }
