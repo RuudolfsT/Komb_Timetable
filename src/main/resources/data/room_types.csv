@@ -1,0 +1,7 @@
+roomType,description
+NORMAL,Standard classroom
+GYM,Gymnasium/Sports hall
+MUSIC,Music room with instruments
+PHYSICS_LAB,Physics laboratory
+CHEMISTRY_LAB,Chemistry/Biology laboratory
+COMPUTER_LAB,Computer laboratory

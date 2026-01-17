@@ -2,59 +2,223 @@
 <plannerBenchmark>
     <benchmarkDirectory>target/benchmarks</benchmarkDirectory>
 
+    <parallelBenchmarkCount>AUTO</parallelBenchmarkCount>
+    <warmUpSecondsSpentLimit>30</warmUpSecondsSpentLimit>
+
     <inheritedSolverBenchmark>
         <solver>
-            <solutionClass>
-                com.schoolplanner.timetable.domain.TimeTable
-            </solutionClass>
-
-            <entityClass>
-                com.schoolplanner.timetable.domain.Lesson
-            </entityClass>
+            <solutionClass>com.schoolplanner.timetable.domain.TimeTable</solutionClass>
+            <entityClass>com.schoolplanner.timetable.domain.Lesson</entityClass>
 
             <scoreDirectorFactory>
-                <constraintProviderClass>
-                    com.schoolplanner.timetable.solver.TimeTableConstraintProvider
-                </constraintProviderClass>
+                <constraintProviderClass>com.schoolplanner.timetable.solver.TimeTableConstraintProvider</constraintProviderClass>
             </scoreDirectorFactory>
 
             <termination>
-                <secondsSpentLimit>120</secondsSpentLimit>
-                <bestScoreLimit>0hard/0soft</bestScoreLimit>
+                <terminationCompositionStyle>OR</terminationCompositionStyle>
+                <secondsSpentLimit>180</secondsSpentLimit>
+                <termination>
+                    <terminationCompositionStyle>AND</terminationCompositionStyle>
+
+                    <bestScoreLimit>0hard/-2147483648soft</bestScoreLimit>
+
+                    <unimprovedSecondsSpentLimit>15</unimprovedSecondsSpentLimit>
+                </termination>
             </termination>
         </solver>
     </inheritedSolverBenchmark>
+
     <solverBenchmark>
-        <name>Timefold Default (Baseline)</name>
+        <name>FF Tabu</name>
         <solver>
-            <solverConfigFile>solverConfig.xml</solverConfigFile>
+            <constructionHeuristic>
+                <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+            </constructionHeuristic>
+            <localSearch>
+                <localSearchType>TABU_SEARCH</localSearchType>
+            </localSearch>
         </solver>
     </solverBenchmark>
 
     <solverBenchmark>
-        <name>FIRST_FIT_TABU</name>
-        <solverConfig inherit="true">
+        <name>FF Tabu carSR pillS</name>
+        <solver>
             <constructionHeuristic>
                 <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
             </constructionHeuristic>
-
             <localSearch>
+                <unionMoveSelector>
+                    <changeMoveSelector><valueSelector variableName="timeSlot"/></changeMoveSelector>
+                    <changeMoveSelector><valueSelector variableName="room"/></changeMoveSelector>
+
+                    <cartesianProductMoveSelector>
+                        <changeMoveSelector><valueSelector variableName="timeSlot"/></changeMoveSelector>
+                        <changeMoveSelector><valueSelector variableName="room"/></changeMoveSelector>
+                    </cartesianProductMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <subPillarType>ALL_OR_NOTHING</subPillarType>
+                        <valueSelector variableName="timeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <swapMoveSelector/>
+                </unionMoveSelector>
                 <localSearchType>TABU_SEARCH</localSearchType>
             </localSearch>
-        </solverConfig>
+        </solver>
     </solverBenchmark>
 
     <solverBenchmark>
-        <name>FIRST_FIT_SIMULATED_ANNEALING</name>
-        <solverConfig inherit="true">
+        <name>FF Tabu carSRT pillS</name>
+        <solver>
+            <constructionHeuristic>
+                <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+            </constructionHeuristic>
+            <localSearch>
+                <unionMoveSelector>
+                    <changeMoveSelector><valueSelector variableName="timeSlot"/></changeMoveSelector>
+                    <changeMoveSelector><valueSelector variableName="room"/></changeMoveSelector>
+                    <changeMoveSelector><valueSelector variableName="teacher"/></changeMoveSelector>
+
+                    <cartesianProductMoveSelector>
+                        <changeMoveSelector><valueSelector variableName="timeSlot"/></changeMoveSelector>
+                        <changeMoveSelector><valueSelector variableName="room"/></changeMoveSelector>
+                        <changeMoveSelector><valueSelector variableName="teacher"/></changeMoveSelector>
+                    </cartesianProductMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <subPillarType>ALL_OR_NOTHING</subPillarType>
+                        <valueSelector variableName="timeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <swapMoveSelector/>
+                </unionMoveSelector>
+                <localSearchType>TABU_SEARCH</localSearchType>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>FF Tabu carST pillS</name>
+        <solver>
+            <constructionHeuristic>
+                <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+            </constructionHeuristic>
+            <localSearch>
+                <unionMoveSelector>
+                    <changeMoveSelector><valueSelector variableName="timeSlot"/></changeMoveSelector>
+                    <changeMoveSelector><valueSelector variableName="teacher"/></changeMoveSelector>
+
+                    <cartesianProductMoveSelector>
+                        <changeMoveSelector><valueSelector variableName="timeSlot"/></changeMoveSelector>
+                        <changeMoveSelector><valueSelector variableName="teacher"/></changeMoveSelector>
+                    </cartesianProductMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <subPillarType>ALL_OR_NOTHING</subPillarType>
+                        <valueSelector variableName="timeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <swapMoveSelector/>
+                </unionMoveSelector>
+                <localSearchType>TABU_SEARCH</localSearchType>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>FFD Tabu carSR pillS</name>
+        <solver>
+            <constructionHeuristic>
+                <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
+            </constructionHeuristic>
+            <localSearch>
+                <unionMoveSelector>
+                    <changeMoveSelector><valueSelector variableName="timeSlot"/></changeMoveSelector>
+                    <changeMoveSelector><valueSelector variableName="room"/></changeMoveSelector>
+
+                    <cartesianProductMoveSelector>
+                        <changeMoveSelector><valueSelector variableName="timeSlot"/></changeMoveSelector>
+                        <changeMoveSelector><valueSelector variableName="room"/></changeMoveSelector>
+                    </cartesianProductMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <subPillarType>ALL_OR_NOTHING</subPillarType>
+                        <valueSelector variableName="timeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <swapMoveSelector/>
+                </unionMoveSelector>
+                <localSearchType>TABU_SEARCH</localSearchType>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>FFD Tabu carSRT pillT</name>
+        <solver>
+            <constructionHeuristic>
+                <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
+            </constructionHeuristic>
+            <localSearch>
+                <unionMoveSelector>
+                    <changeMoveSelector><valueSelector variableName="timeSlot"/></changeMoveSelector>
+                    <changeMoveSelector><valueSelector variableName="room"/></changeMoveSelector>
+                    <changeMoveSelector><valueSelector variableName="teacher"/></changeMoveSelector>
+
+                    <cartesianProductMoveSelector>
+                        <changeMoveSelector><valueSelector variableName="timeSlot"/></changeMoveSelector>
+                        <changeMoveSelector><valueSelector variableName="room"/></changeMoveSelector>
+                        <changeMoveSelector><valueSelector variableName="teacher"/></changeMoveSelector>
+                    </cartesianProductMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <subPillarType>ALL_OR_NOTHING</subPillarType>
+                        <valueSelector variableName="timeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <swapMoveSelector/>
+                </unionMoveSelector>
+                <localSearchType>TABU_SEARCH</localSearchType>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>FFD Tabu</name>
+        <solver>
+            <constructionHeuristic>
+                <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
+            </constructionHeuristic>
+            <localSearch>
+                <localSearchType>TABU_SEARCH</localSearchType>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>FF LA</name>
+        <solver>
             <constructionHeuristic>
                 <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
             </constructionHeuristic>
 
             <localSearch>
-                <localSearchType>SIMULATED_ANNEALING</localSearchType>
+                <localSearchType>LATE_ACCEPTANCE</localSearchType>
             </localSearch>
-        </solverConfig>
+        </solver>
     </solverBenchmark>
 
+    <solverBenchmark>
+        <name>FFD LA</name>
+        <solver>
+            <constructionHeuristic>
+                <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
+            </constructionHeuristic>
+
+            <localSearch>
+                <localSearchType>LATE_ACCEPTANCE</localSearchType>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
 </plannerBenchmark>
