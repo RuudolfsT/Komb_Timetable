@@ -16,12 +16,10 @@
 
     <termination>
         <terminationCompositionStyle>OR</terminationCompositionStyle>
-        <secondsSpentLimit>180</secondsSpentLimit>
+        <secondsSpentLimit>400</secondsSpentLimit>
         <termination>
             <terminationCompositionStyle>AND</terminationCompositionStyle>
-
             <bestScoreLimit>0hard/-2147483648soft</bestScoreLimit>
-
             <unimprovedSecondsSpentLimit>15</unimprovedSecondsSpentLimit>
         </termination>
     </termination>

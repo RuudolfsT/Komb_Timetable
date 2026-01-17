@@ -76,6 +76,34 @@ public class TimeTableController {
         return ResponseEntity.accepted().body(Map.of("jobId", jobId));
     }
 
+    @PostMapping("/jobs/from-all-csv-678-A-lim")
+    public ResponseEntity<Map<String, String>> submitFromAllCsvFiles678Alim() {
+        TimeTable problem = CsvDataLoader.generateFromAllCsvFiles("data/rooms.csv", "data/teachers_limited.csv", "data/lunch_groups.csv", "data/lesson_list_678.csv", 1);
+        String jobId = asyncSolveService.submit(problem);
+        return ResponseEntity.accepted().body(Map.of("jobId", jobId));
+    }
+
+    @PostMapping("/jobs/from-all-csv-678-AB")
+    public ResponseEntity<Map<String, String>> submitFromAllCsvFiles678AB() {
+        TimeTable problem = CsvDataLoader.generateFromAllCsvFiles("data/rooms.csv", "data/teachers.csv", "data/lunch_groups.csv", "data/lesson_list_678.csv", 2);
+        String jobId = asyncSolveService.submit(problem);
+        return ResponseEntity.accepted().body(Map.of("jobId", jobId));
+    }
+
+    @PostMapping("/jobs/from-all-csv-9-ABC")
+    public ResponseEntity<Map<String, String>> submitFromAllCsvFiles9ABC() {
+        TimeTable problem = CsvDataLoader.generateFromAllCsvFiles("data/rooms.csv", "data/teachers.csv", "data/lunch_groups.csv", "data/lesson_list_9.csv", 3);
+        String jobId = asyncSolveService.submit(problem);
+        return ResponseEntity.accepted().body(Map.of("jobId", jobId));
+    }
+
+    @PostMapping("/jobs/from-all-csv-9-ABC-lim")
+    public ResponseEntity<Map<String, String>> submitFromAllCsvFilesABC() {
+        TimeTable problem = CsvDataLoader.generateFromAllCsvFiles("data/rooms.csv", "data/teachers_limited.csv", "data/lunch_groups.csv", "data/lesson_list_9.csv", 3);
+        String jobId = asyncSolveService.submit(problem);
+        return ResponseEntity.accepted().body(Map.of("jobId", jobId));
+    }
+
     // Izgūst risinājuma statusu
     @GetMapping("/jobs/{jobId}")
     public ResponseEntity<Map<String, Object>> getJobStatus(
