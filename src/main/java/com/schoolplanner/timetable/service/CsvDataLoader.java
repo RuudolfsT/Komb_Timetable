@@ -179,6 +179,16 @@ public class CsvDataLoader {
             List<TeachingUnit> allTeachingUnits
     ) {
         List<Teacher> teachers = new ArrayList<>();
+        
+        // Cache teaching units by subject for faster lookup
+        Map<String, List<TeachingUnit>> unitCache = new HashMap<>();
+        for (Subject subject : Subject.values()) {
+            unitCache.put(subject.toString(), 
+                allTeachingUnits.stream()
+                    .filter(u -> u.getSubject() == subject)
+                    .toList()
+            );
+        }
 
         try (BufferedReader br = getBufferedReader(resourcePath)) {
             String headerLine = br.readLine();
@@ -214,8 +224,8 @@ public class CsvDataLoader {
                     teacher.setHomeRoom(homeRoom);
                 }
 
-                // Parse qualified units
-                Set<TeachingUnit> qualifiedUnits = parseQualifiedUnits(qualifiedUnitsStr, allTeachingUnits);
+                // Parse qualified units with cache
+                Set<TeachingUnit> qualifiedUnits = parseQualifiedUnits(qualifiedUnitsStr, allTeachingUnits, unitCache);
                 teacher.setQualifiedUnits(qualifiedUnits);
 
                 // Parse work time slots
@@ -242,6 +252,12 @@ public class CsvDataLoader {
      */
     public static List<LunchGroup> loadLunchGroupsFromCsv(String resourcePath, List<TimeSlot> allTimeSlots) {
         List<LunchGroup> lunchGroups = new ArrayList<>();
+        
+        // Pre-cache time slots by day for faster lookup
+        Map<SchoolDay, List<TimeSlot>> slotsByDay = new HashMap<>();
+        for (TimeSlot slot : allTimeSlots) {
+            slotsByDay.computeIfAbsent(slot.getSchoolDay(), k -> new ArrayList<>()).add(slot);
+        }
 
         try (BufferedReader br = getBufferedReader(resourcePath)) {
             String headerLine = br.readLine();
@@ -305,6 +321,9 @@ public class CsvDataLoader {
         List<TeachingUnit> allTeachingUnits = new ArrayList<>();
         List<SchoolClass> schoolClasses = new ArrayList<>();
         List<Lesson> lessons = new ArrayList<>();
+        
+        // Use a map to cache teaching units by subject+grade for O(1) lookup
+        Map<String, TeachingUnit> unitMap = new HashMap<>();
 
         long lessonIdCounter = 0;
         long teachingUnitCounter = 0;
@@ -365,16 +384,14 @@ public class CsvDataLoader {
                     }
 
                     RoomType requiredRoom = getRoomTypeForSubject(subject);
-
-                    TeachingUnit unit = new TeachingUnit(++teachingUnitCounter, subject, grade, requiredRoom);
-
-                    // Check if unit already exists
-                    TeachingUnit existingUnit = findExistingUnit(allTeachingUnits, unit);
+                    
+                    // Use cached lookup instead of linear search
+                    String unitKey = subject.toString() + ":" + grade;
+                    TeachingUnit existingUnit = unitMap.get(unitKey);
                     if (existingUnit == null) {
-                        allTeachingUnits.add(unit);
-                        existingUnit = unit;
-                    } else {
-                        teachingUnitCounter--; // Revert counter since we didn't add a new unit
+                        existingUnit = new TeachingUnit(++teachingUnitCounter, subject, grade, requiredRoom);
+                        allTeachingUnits.add(existingUnit);
+                        unitMap.put(unitKey, existingUnit);
                     }
 
                     for (int k = 0; k < count; k++) {
@@ -389,15 +406,6 @@ public class CsvDataLoader {
         }
 
         return new LessonParseResult(allTeachingUnits, schoolClasses, lessons);
-    }
-
-    private static TeachingUnit findExistingUnit(List<TeachingUnit> units, TeachingUnit target) {
-        for (TeachingUnit unit : units) {
-            if (unit.getSubject() == target.getSubject() && unit.getGrade() == target.getGrade()) {
-                return unit;
-            }
-        }
-        return null;
     }
 
     private static RoomType getRoomTypeForSubject(Subject s) {
@@ -417,6 +425,10 @@ public class CsvDataLoader {
      * Example: MATH:1-6;LATVIAN:1-6
      */
     private static Set<TeachingUnit> parseQualifiedUnits(String qualifiedUnitsStr, List<TeachingUnit> allTeachingUnits) {
+        return parseQualifiedUnits(qualifiedUnitsStr, allTeachingUnits, null);
+    }
+
+    private static Set<TeachingUnit> parseQualifiedUnits(String qualifiedUnitsStr, List<TeachingUnit> allTeachingUnits, Map<String, List<TeachingUnit>> unitCache) {
         Set<TeachingUnit> result = new HashSet<>();
 
         if (qualifiedUnitsStr == null || qualifiedUnitsStr.isEmpty()) {
@@ -449,12 +461,26 @@ public class CsvDataLoader {
             int minGrade = Integer.parseInt(gradeRange[0].trim());
             int maxGrade = gradeRange.length > 1 ? Integer.parseInt(gradeRange[1].trim()) : minGrade;
 
-            // Find matching teaching units
-            for (TeachingUnit unit : allTeachingUnits) {
-                if (unit.getSubject() == subject &&
-                        unit.getGrade() >= minGrade &&
-                        unit.getGrade() <= maxGrade) {
-                    result.add(unit);
+            // Use cache if available, otherwise search all units
+            if (unitCache != null) {
+                String cacheKey = subject.toString();
+                List<TeachingUnit> unitsBySubject = unitCache.computeIfAbsent(cacheKey, k -> 
+                    allTeachingUnits.stream()
+                        .filter(u -> u.getSubject() == subject)
+                        .toList()
+                );
+                for (TeachingUnit unit : unitsBySubject) {
+                    if (unit.getGrade() >= minGrade && unit.getGrade() <= maxGrade) {
+                        result.add(unit);
+                    }
+                }
+            } else {
+                for (TeachingUnit unit : allTeachingUnits) {
+                    if (unit.getSubject() == subject &&
+                            unit.getGrade() >= minGrade &&
+                            unit.getGrade() <= maxGrade) {
+                        result.add(unit);
+                    }
                 }
             }
         }
@@ -594,6 +620,16 @@ public class CsvDataLoader {
             List<TeachingUnit> allTeachingUnits
     ) {
         List<Teacher> teachers = new ArrayList<>();
+        
+        // Cache teaching units by subject for faster lookup
+        Map<String, List<TeachingUnit>> unitCache = new HashMap<>();
+        for (Subject subject : Subject.values()) {
+            unitCache.put(subject.toString(), 
+                allTeachingUnits.stream()
+                    .filter(u -> u.getSubject() == subject)
+                    .toList()
+            );
+        }
 
         try (BufferedReader br = getBufferedReaderFromMultipartFile(file)) {
             String headerLine = br.readLine();
@@ -626,7 +662,8 @@ public class CsvDataLoader {
 
                 Set<TeachingUnit> qualifiedTeachingUnits = parseQualifiedUnits(
                         qualifiedUnitsStr,
-                        allTeachingUnits
+                        allTeachingUnits,
+                        unitCache
                 );
 
                 Set<TimeSlot> availableTimeSlots = parseWorkTimeSlots(
@@ -657,6 +694,12 @@ public class CsvDataLoader {
      */
     private static List<LunchGroup> loadLunchGroupsFromUploadedCsv(MultipartFile file, List<TimeSlot> allTimeSlots) {
         List<LunchGroup> lunchGroups = new ArrayList<>();
+        
+        // Pre-cache time slots by day for faster lookup
+        Map<SchoolDay, List<TimeSlot>> slotsByDay = new HashMap<>();
+        for (TimeSlot slot : allTimeSlots) {
+            slotsByDay.computeIfAbsent(slot.getSchoolDay(), k -> new ArrayList<>()).add(slot);
+        }
 
         try (BufferedReader br = getBufferedReaderFromMultipartFile(file)) {
             String headerLine = br.readLine();
@@ -709,6 +752,9 @@ public class CsvDataLoader {
         List<TeachingUnit> allTeachingUnits = new ArrayList<>();
         List<SchoolClass> schoolClasses = new ArrayList<>();
         List<Lesson> lessons = new ArrayList<>();
+        
+        // Use a map to cache teaching units by subject+grade for O(1) lookup
+        Map<String, TeachingUnit> unitMap = new HashMap<>();
 
         long lessonIdCounter = 0;
         long teachingUnitCounter = 0;
@@ -769,16 +815,14 @@ public class CsvDataLoader {
                         }
 
                         RoomType requiredRoom = getRoomTypeForSubject(subject);
-
-                        TeachingUnit unit = new TeachingUnit(++teachingUnitCounter, subject, grade, requiredRoom);
-
-                        // Check if unit already exists
-                        TeachingUnit existingUnit = findExistingUnit(allTeachingUnits, unit);
+                        
+                        // Use cached lookup instead of linear search
+                        String unitKey = subject.toString() + ":" + grade;
+                        TeachingUnit existingUnit = unitMap.get(unitKey);
                         if (existingUnit == null) {
-                            allTeachingUnits.add(unit);
-                            existingUnit = unit;
-                        } else {
-                            teachingUnitCounter--; // Revert counter since we didn't add a new unit
+                            existingUnit = new TeachingUnit(++teachingUnitCounter, subject, grade, requiredRoom);
+                            allTeachingUnits.add(existingUnit);
+                            unitMap.put(unitKey, existingUnit);
                         }
 
                         for (int k = 0; k < count; k++) {

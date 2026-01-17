@@ -20,7 +20,7 @@
         <termination>
             <terminationCompositionStyle>AND</terminationCompositionStyle>
             <bestScoreLimit>0hard/-2147483648soft</bestScoreLimit>
-            <unimprovedSecondsSpentLimit>15</unimprovedSecondsSpentLimit>
+            <unimprovedSecondsSpentLimit>8</unimprovedSecondsSpentLimit>
         </termination>
     </termination>
 
