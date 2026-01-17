@@ -2,6 +2,7 @@ package com.schoolplanner.timetable.service;
 
 import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
 import com.schoolplanner.timetable.domain.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.time.LocalTime;
@@ -67,6 +68,54 @@ public class CsvDataLoader {
 
         // Load lunch groups from CSV (needs time slots)
         List<LunchGroup> lunchGroups = loadLunchGroupsFromCsv(lunchGroupsCsvPath, timeSlots);
+
+        return new TimeTable(
+                timeSlots,
+                rooms,
+                teachers,
+                lunchGroups,
+                schoolClasses,
+                lessons,
+                HardSoftScore.ZERO
+        );
+    }
+
+    /**
+     * Generates a TimeTable from uploaded CSV files.
+     */
+    public static TimeTable generateFromUploadedCsvFiles(
+            MultipartFile roomsCsv,
+            MultipartFile teachersCsv,
+            MultipartFile lunchGroupsCsv,
+            MultipartFile lessonsCsv,
+            int classCount
+    ) {
+        // Generate time slots first (needed for teachers and lunch groups)
+        List<TimeSlot> timeSlots = generateTimeSlots();
+
+        // Load rooms from uploaded CSV
+        List<Room> rooms = loadRoomsFromUploadedCsv(roomsCsv);
+        Map<String, Room> roomMap = new HashMap<>();
+        for (Room room : rooms) {
+            roomMap.put(room.getId(), room);
+        }
+
+        // Parse lessons CSV to create teaching units and lessons
+        LessonParseResult lessonResult = parseLessonsUploadedCsv(lessonsCsv, classCount);
+        List<TeachingUnit> allTeachingUnits = lessonResult.teachingUnits;
+        List<SchoolClass> schoolClasses = lessonResult.schoolClasses;
+        List<Lesson> lessons = lessonResult.lessons;
+
+        // Load teachers from uploaded CSV (needs rooms and teaching units)
+        List<Teacher> teachers = loadTeachersFromUploadedCsv(
+                teachersCsv,
+                roomMap,
+                timeSlots,
+                allTeachingUnits
+        );
+
+        // Load lunch groups from uploaded CSV (needs time slots)
+        List<LunchGroup> lunchGroups = loadLunchGroupsFromUploadedCsv(lunchGroupsCsv, timeSlots);
 
         return new TimeTable(
                 timeSlots,
@@ -489,5 +538,263 @@ public class CsvDataLoader {
         }
 
         return new BufferedReader(new InputStreamReader(is));
+    }
+
+    /**
+     * Creates a BufferedReader from an uploaded MultipartFile.
+     */
+    private static BufferedReader getBufferedReaderFromMultipartFile(MultipartFile file) throws IOException {
+        return new BufferedReader(new InputStreamReader(file.getInputStream()));
+    }
+
+    /**
+     * Loads rooms from uploaded CSV file.
+     */
+    private static List<Room> loadRoomsFromUploadedCsv(MultipartFile file) {
+        List<Room> rooms = new ArrayList<>();
+
+        try (BufferedReader br = getBufferedReaderFromMultipartFile(file)) {
+            String headerLine = br.readLine();
+            if (headerLine == null) return rooms;
+
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+
+                String[] columns = line.split(",");
+                if (columns.length < 2) continue;
+
+                String id = columns[0].trim();
+                String roomTypeStr = columns[1].trim();
+
+                RoomType roomType;
+                try {
+                    roomType = RoomType.valueOf(roomTypeStr.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Warning: RoomType '" + roomTypeStr + "' not found. Defaulting to NORMAL.");
+                    roomType = RoomType.NORMAL;
+                }
+
+                rooms.add(new Room(id, roomType));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read uploaded rooms CSV", e);
+        }
+
+        return rooms;
+    }
+
+    /**
+     * Loads teachers from uploaded CSV file.
+     */
+    private static List<Teacher> loadTeachersFromUploadedCsv(
+            MultipartFile file,
+            Map<String, Room> roomMap,
+            List<TimeSlot> allTimeSlots,
+            List<TeachingUnit> allTeachingUnits
+    ) {
+        List<Teacher> teachers = new ArrayList<>();
+
+        try (BufferedReader br = getBufferedReaderFromMultipartFile(file)) {
+            String headerLine = br.readLine();
+            if (headerLine == null) return teachers;
+
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+
+                String[] columns = line.split(",");
+                if (columns.length < 8) {
+                    System.out.println("Warning: Skipping malformed teacher line: " + line);
+                    continue;
+                }
+
+                String id = columns[0].trim();
+                String firstName = columns[1].trim();
+                String lastName = columns[2].trim();
+                String homeRoomId = columns[3].trim();
+                String qualifiedUnitsStr = columns[4].trim();
+                String workDaysStr = columns[5].trim();
+                String workStartTimeStr = columns[6].trim();
+                String workEndTimeStr = columns[7].trim();
+
+                Room homeRoom = roomMap.getOrDefault(homeRoomId, null);
+                if (homeRoom == null) {
+                    System.out.println("Warning: Home room '" + homeRoomId + "' not found for teacher " + id);
+                    continue;
+                }
+
+                Set<TeachingUnit> qualifiedTeachingUnits = parseQualifiedUnits(
+                        qualifiedUnitsStr,
+                        allTeachingUnits
+                );
+
+                Set<TimeSlot> availableTimeSlots = parseWorkTimeSlots(
+                        workDaysStr,
+                        workStartTimeStr,
+                        workEndTimeStr,
+                        allTimeSlots
+                );
+
+                teachers.add(new Teacher(
+                        id,
+                        firstName,
+                        lastName,
+                        homeRoom,
+                        qualifiedTeachingUnits,
+                        availableTimeSlots
+                ));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read uploaded teachers CSV", e);
+        }
+
+        return teachers;
+    }
+
+    /**
+     * Loads lunch groups from uploaded CSV file.
+     */
+    private static List<LunchGroup> loadLunchGroupsFromUploadedCsv(MultipartFile file, List<TimeSlot> allTimeSlots) {
+        List<LunchGroup> lunchGroups = new ArrayList<>();
+
+        try (BufferedReader br = getBufferedReaderFromMultipartFile(file)) {
+            String headerLine = br.readLine();
+            if (headerLine == null) return lunchGroups;
+
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+
+                String[] columns = line.split(",");
+                if (columns.length < 5) {
+                    System.out.println("Warning: Skipping malformed lunch group line: " + line);
+                    continue;
+                }
+
+                try {
+                    String name = columns[0].trim();
+                    int minGrade = Integer.parseInt(columns[1].trim());
+                    int maxGrade = Integer.parseInt(columns[2].trim());
+                    LocalTime lunchStartTime = LocalTime.parse(columns[3].trim());
+                    LocalTime lunchEndTime = LocalTime.parse(columns[4].trim());
+
+                    // Find matching time slots across all days
+                    List<TimeSlot> lunchTimeSlots = new ArrayList<>();
+                    for (TimeSlot slot : allTimeSlots) {
+                        // Slot overlaps with lunch time if:
+                        // slot starts before lunch ends AND slot ends after lunch starts
+                        if (slot.getStartTime().isBefore(lunchEndTime) &&
+                                slot.getEndTime().isAfter(lunchStartTime)) {
+                            lunchTimeSlots.add(slot);
+                        }
+                    }
+
+                    lunchGroups.add(new LunchGroup(name, minGrade, maxGrade, lunchTimeSlots));
+                } catch (NumberFormatException e) {
+                    System.out.println("Warning: Skipping malformed lunch group line: " + line);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read uploaded lunch groups CSV", e);
+        }
+
+        return lunchGroups;
+    }
+
+    /**
+     * Parses lessons from uploaded CSV file.
+     */
+    private static LessonParseResult parseLessonsUploadedCsv(MultipartFile file, int classCount) {
+        List<TeachingUnit> allTeachingUnits = new ArrayList<>();
+        List<SchoolClass> schoolClasses = new ArrayList<>();
+        List<Lesson> lessons = new ArrayList<>();
+
+        long lessonIdCounter = 0;
+        long teachingUnitCounter = 0;
+        long classIdCounter = 0;
+
+        try (BufferedReader br = getBufferedReaderFromMultipartFile(file)) {
+            String headerLine = br.readLine();
+            if (headerLine == null) {
+                return new LessonParseResult(allTeachingUnits, schoolClasses, lessons);
+            }
+
+            String[] headers = headerLine.split(",");
+
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+
+                String[] columns = line.split(",");
+
+                String gradeStr = columns[0].trim();
+                if (gradeStr.isEmpty() || gradeStr.equalsIgnoreCase("nan")) continue;
+
+                try {
+                    int grade = (int) Double.parseDouble(gradeStr);
+
+                    List<SchoolClass> classesForThisRow = new ArrayList<>();
+
+                    for (int i = 0; i < classCount; i++) {
+                        char classSuffix = (char) ('A' + i);
+
+                        SchoolClass schoolClass = new SchoolClass(
+                                ++classIdCounter,
+                                grade + String.valueOf(classSuffix),
+                                grade
+                        );
+
+                        schoolClasses.add(schoolClass);
+                        classesForThisRow.add(schoolClass);
+                    }
+
+                    for (int i = 1; i < columns.length; i++) {
+                        if (i >= headers.length) break;
+
+                        String subjectName = headers[i].trim();
+                        String countStr = columns[i].trim();
+
+                        if (countStr.isEmpty() || countStr.equalsIgnoreCase("nan")) continue;
+
+                        int count = (int) Double.parseDouble(countStr);
+                        if (count == 0) continue;
+
+                        Subject subject;
+                        try {
+                            subject = Subject.valueOf(subjectName.toUpperCase());
+                        } catch (IllegalArgumentException e) {
+                            System.out.println("Warning: Subject '" + subjectName + "' not found. Skipping.");
+                            continue;
+                        }
+
+                        RoomType requiredRoom = getRoomTypeForSubject(subject);
+
+                        TeachingUnit unit = new TeachingUnit(++teachingUnitCounter, subject, grade, requiredRoom);
+
+                        // Check if unit already exists
+                        TeachingUnit existingUnit = findExistingUnit(allTeachingUnits, unit);
+                        if (existingUnit == null) {
+                            allTeachingUnits.add(unit);
+                            existingUnit = unit;
+                        } else {
+                            teachingUnitCounter--; // Revert counter since we didn't add a new unit
+                        }
+
+                        for (int k = 0; k < count; k++) {
+                            for (SchoolClass sClass : classesForThisRow) {
+                                lessons.add(new Lesson(++lessonIdCounter, existingUnit, sClass));
+                            }
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("Warning: Skipping malformed lesson line: " + line);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read uploaded lessons CSV", e);
+        }
+
+        return new LessonParseResult(allTeachingUnits, schoolClasses, lessons);
     }
 }

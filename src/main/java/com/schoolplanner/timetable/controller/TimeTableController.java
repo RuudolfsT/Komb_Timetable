@@ -7,6 +7,7 @@ import com.schoolplanner.timetable.domain.TimeTable;
 import com.schoolplanner.timetable.service.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,6 +65,26 @@ public class TimeTableController {
     public ResponseEntity<Map<String, String>> submitTestCase() {
 
         TimeTable problem = TestCase.testCase();
+        String jobId = asyncSolveService.submit(problem);
+        return ResponseEntity.accepted().body(Map.of("jobId", jobId));
+    }
+
+    // Ielādē problēmu no augšupielādētiem CSV failiem
+    @PostMapping("/jobs/upload")
+    public ResponseEntity<Map<String, String>> submitFromCsvFiles(
+            @RequestParam("roomsCsv") MultipartFile roomsCsv,
+            @RequestParam("teachersCsv") MultipartFile teachersCsv,
+            @RequestParam("lunchGroupsCsv") MultipartFile lunchGroupsCsv,
+            @RequestParam("lessonsCsv") MultipartFile lessonsCsv,
+            @RequestParam("classCount") int classCount
+    ) {
+        TimeTable problem = CsvDataLoader.generateFromUploadedCsvFiles(
+                roomsCsv,
+                teachersCsv,
+                lunchGroupsCsv,
+                lessonsCsv,
+                classCount
+        );
         String jobId = asyncSolveService.submit(problem);
         return ResponseEntity.accepted().body(Map.of("jobId", jobId));
     }

@@ -36,6 +36,9 @@ async function submitEndpoint() {
     const solveBtn = document.getElementById('solveBtn');
     solveBtn.disabled = true;
     showEndpointStatus('Submitting problem...', 'info');
+    toggleLoading(true);
+    hideStatus();
+    resetView();
     
     try {
         const response = await fetch(`${API_BASE}${endpoint}`, { method: 'POST' });
@@ -47,7 +50,7 @@ async function submitEndpoint() {
         const data = await response.json();
         const jobId = data.jobId;
         
-        showEndpointStatus(`✓ Problem submitted! Job ID: ${jobId}`, 'success');
+        showEndpointStatus(`Problem submitted! Job ID: ${jobId}`, 'success');
         
         // Auto-fill the job ID input and clear endpoint select
         document.getElementById('jobIdInput').value = jobId;
@@ -61,10 +64,85 @@ async function submitEndpoint() {
     } catch (error) {
         showEndpointStatus(`Error: ${error.message}`, 'error');
         console.error('Error:', error);
+        toggleLoading(false);
     } finally {
         solveBtn.disabled = false;
     }
 }
+
+async function submitUploadedFiles() {
+    const roomsCsv = document.getElementById('roomsCsvFile').files[0];
+    const teachersCsv = document.getElementById('teachersCsvFile').files[0];
+    const lunchGroupsCsv = document.getElementById('lunchGroupsCsvFile').files[0];
+    const lessonsCsv = document.getElementById('lessonsCsvFile').files[0];
+    const classCount = parseInt(document.getElementById('classCountInput').value) || 1;
+
+    // Validate that all files are selected
+    if (!roomsCsv || !teachersCsv || !lunchGroupsCsv || !lessonsCsv) {
+        showUploadStatus('Please select all four CSV files', 'error');
+        return;
+    }
+
+    const uploadBtn = document.getElementById('uploadBtn');
+    uploadBtn.disabled = true;
+    showUploadStatus('Uploading files and submitting problem...', 'info');
+    toggleLoading(true);
+    hideStatus();
+    resetView();
+
+    try {
+        // Create FormData to send files
+        const formData = new FormData();
+        formData.append('roomsCsv', roomsCsv);
+        formData.append('teachersCsv', teachersCsv);
+        formData.append('lunchGroupsCsv', lunchGroupsCsv);
+        formData.append('lessonsCsv', lessonsCsv);
+        formData.append('classCount', classCount);
+
+        const response = await fetch(`${API_BASE}/jobs/upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const jobId = data.jobId;
+
+        showUploadStatus(`Problem submitted! Job ID: ${jobId}`, 'success');
+
+        // Auto-fill the job ID input
+        document.getElementById('jobIdInput').value = jobId;
+
+        // Clear file inputs
+        document.getElementById('roomsCsvFile').value = '';
+        document.getElementById('teachersCsvFile').value = '';
+        document.getElementById('lunchGroupsCsvFile').value = '';
+        document.getElementById('lessonsCsvFile').value = '';
+
+        // Optional: auto-fetch the solution after a short delay
+        setTimeout(() => {
+            fetchSolution();
+        }, 1500);
+
+    } catch (error) {
+        showUploadStatus(`Error: ${error.message}`, 'error');
+        console.error('Error:', error);
+        toggleLoading(false);
+    } finally {
+        uploadBtn.disabled = false;
+    }
+}
+
+function showUploadStatus(message, type) {
+    const el = document.getElementById('uploadStatus');
+    el.textContent = message;
+    el.className = `endpoint-status ${type}`;
+    el.style.display = 'block';
+}
+function hideUploadStatus() { document.getElementById('uploadStatus').style.display = 'none'; }
 
 function formatScore(score) {
     if (!score) return { hard: '0', soft: '0' };
