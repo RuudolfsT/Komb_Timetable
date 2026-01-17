@@ -11,12 +11,33 @@
         <h1>School Timetable Solution Viewer</h1>
         <p class="subtitle">Enter a job ID, choose a class, and view its schedule grouped by days.</p>
 
-        <div class="controls">
-            <input type="text" id="jobIdInput" placeholder="Enter Job ID" />
-            <button id="fetchBtn" onclick="fetchSolution()">Fetch Solution</button>
+        <!-- Endpoint Selection Section -->
+        <div class="endpoint-section">
+            <h2>Solve a New Problem</h2>
+            <p class="endpoint-subtitle">Select a problem type and click "Solve" to submit it</p>
+            <div class="endpoint-controls">
+                <select id="endpointSelect">
+                    <option value="">-- Select a problem --</option>
+                    <option value="/jobs/from-csv-test">Testing (6,7,8 grades CSV)</option>
+                    <option value="/jobs/from-all-csv">Load from CSV Files</option>
+                </select>
+                <button id="solveBtn" onclick="submitEndpoint()">Solve</button>
+            </div>
+            <div id="endpointStatus" class="endpoint-status"></div>
+        </div>
+
+        <!-- Existing Solution Viewer Section -->
+        <div class="viewer-section">
+            <h2>View Solution</h2>
+            <p class="viewer-subtitle">Enter a job ID to view its solution</p>
+
+            <div class="controls">
+                <input type="text" id="jobIdInput" placeholder="Enter Job ID" />
+                <button id="fetchBtn" onclick="fetchSolution()">Fetch Solution</button>
             <select id="classSelect" disabled onchange="renderSelectedClass()">
-                <option value="">Select class...</option>
-            </select>
+                    <option value="">Select class...</option>
+                </select>
+            </div>
         </div>
 
         <div id="status" class="status"></div>
@@ -42,7 +63,7 @@
 
         <div id="loading" class="loading">
             <div class="spinner"></div>
-            <div>Loading solution...</div>
+            <div>Solving started, please don't close this page.</div>
         </div>
 
         <div id="emptyState" class="empty-state">
