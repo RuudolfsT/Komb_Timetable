@@ -7,6 +7,7 @@ let lessonsByClass = {};
 let sortedTimeSlots = [];
 let classInfoMap = new Map(); // className -> { name, grade }
 let lunchGroups = []; // Store lunch groups from the solution
+let autoRetryTimeout = null; // Track auto-retry timeout to cancel if needed
 
 function showStatus(message, type) {
     const el = document.getElementById('status');
@@ -15,6 +16,55 @@ function showStatus(message, type) {
     el.style.display = 'block';
 }
 function hideStatus() { document.getElementById('status').style.display = 'none'; }
+
+function showEndpointStatus(message, type) {
+    const el = document.getElementById('endpointStatus');
+    el.textContent = message;
+    el.className = `endpoint-status ${type}`;
+    el.style.display = 'block';
+}
+function hideEndpointStatus() { document.getElementById('endpointStatus').style.display = 'none'; }
+
+async function submitEndpoint() {
+    const endpoint = document.getElementById('endpointSelect').value;
+    
+    if (!endpoint) {
+        showEndpointStatus('Please select an endpoint', 'error');
+        return;
+    }
+    
+    const solveBtn = document.getElementById('solveBtn');
+    solveBtn.disabled = true;
+    showEndpointStatus('Submitting problem...', 'info');
+    
+    try {
+        const response = await fetch(`${API_BASE}${endpoint}`, { method: 'POST' });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const jobId = data.jobId;
+        
+        showEndpointStatus(`✓ Problem submitted! Job ID: ${jobId}`, 'success');
+        
+        // Auto-fill the job ID input and clear endpoint select
+        document.getElementById('jobIdInput').value = jobId;
+        document.getElementById('endpointSelect').value = '';
+        
+        // Optional: auto-fetch the solution after a short delay
+        setTimeout(() => {
+            fetchSolution();
+        }, 1500);
+        
+    } catch (error) {
+        showEndpointStatus(`Error: ${error.message}`, 'error');
+        console.error('Error:', error);
+    } finally {
+        solveBtn.disabled = false;
+    }
+}
 
 function formatScore(score) {
     if (!score) return { hard: '0', soft: '0' };
@@ -188,28 +238,43 @@ function compareTimeSlots(a, b) {
     return a.startTime.localeCompare(b.startTime);
 }
 
-async function fetchSolution() {
+async function fetchSolution(isRetry = false) {
     const jobId = document.getElementById('jobIdInput').value.trim();
     if (!jobId) { showStatus('Please enter a Job ID', 'error'); return; }
 
-    hideStatus();
-    toggleLoading(true);
-    resetView();
+    if (!isRetry) {
+        hideStatus();
+        toggleLoading(true);
+        resetView();
+    }
 
     try {
         const res = await fetch(`${API_BASE}/jobs/${jobId}/solution`);
-        if (res.status === 404) { showStatus('Job not found. Please check the Job ID.', 'error'); return; }
-        if (res.status === 409) { showStatus('Solution is not ready yet. Try again later.', 'info'); return; }
+        if (res.status === 404) { 
+            toggleLoading(false);
+            showStatus('Job not found. Please check the Job ID.', 'error'); 
+            return; 
+        }
+        if (res.status === 409) { 
+            // Auto-retry after 500ms, keep spinner visible and status hidden
+            if (autoRetryTimeout) clearTimeout(autoRetryTimeout);
+            autoRetryTimeout = setTimeout(() => {
+                fetchSolution(true);
+            }, 500);
+            return; 
+        }
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
 
         const data = await res.json();
         handleSolution(data);
         showStatus('Solution loaded. Select a class to view.', 'success');
+        toggleLoading(false);
+        if (autoRetryTimeout) clearTimeout(autoRetryTimeout);
     } catch (err) {
         console.error(err);
         showStatus(`Error: ${err.message}`, 'error');
-    } finally {
         toggleLoading(false);
+        if (autoRetryTimeout) clearTimeout(autoRetryTimeout);
     }
 }
 
@@ -482,7 +547,6 @@ function resetView() {
     document.getElementById('scoreSection').style.display = 'none';
     document.getElementById('timetableContainer').style.display = 'none';
     document.getElementById('emptyState').style.display = 'none';
-    document.getElementById('classSelect').disabled = true;
     document.getElementById('classSelect').innerHTML = '<option value=\"\">Select class...</option>';
     resetTable();
 }
