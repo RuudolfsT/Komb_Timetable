@@ -18,8 +18,11 @@
             <div class="endpoint-controls">
                 <select id="endpointSelect">
                     <option value="">-- Select a problem --</option>
-                    <option value="/jobs/from-csv-test">Testing (6,7,8 grades CSV)</option>
                     <option value="/jobs/from-all-csv">Load from CSV Files</option>
+                    <option value="/jobs/from-all-csv-678-A-lim">Load from CSV (6,7,8 grades A-lim)</option>
+                    <option value="/jobs/from-all-csv-678-AB">Load from CSV Files (6,7,8 grades AB)</option>
+                    <option value="/jobs/from-all-csv-9-ABC">Load from CSV Files (9 grades ABC)</option>
+                    <option value="/jobs/from-all-csv-9-ABC-lim">Load from CSV Files (9 grades ABC-lim)</option>
                 </select>
                 <button id="solveBtn" onclick="submitEndpoint()">Solve</button>
             </div>
