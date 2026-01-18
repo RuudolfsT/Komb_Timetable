@@ -167,7 +167,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 .asConstraint("One teacher per unit per class");
     }
 
-    // Priekšmets tiek vienmēr pasniegts tajā pašā telpā
+    // Priekšmetu vajadzētu pasniegt tajā pašā telpā
     Constraint schoolClassLessonRoomStability(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Lesson.class)
                 .filter(lesson -> lesson.getRoom() != null)
@@ -178,7 +178,7 @@ public class TimeTableConstraintProvider implements ConstraintProvider {
                 )
                 .filter((schoolClass, teachingUnit, distinctRoomCount) -> distinctRoomCount > 1)
                 .penalize(HardSoftScore.ONE_SOFT, (schoolClass, teachingUnit, distinctRoomCount) -> (distinctRoomCount - 1) * 3)
-                .asConstraint("One room for teachingUnit");
+                .asConstraint("One room for teachingUnit preference");
     }
 
     // Skolotājam vēlas pasniegt stundu savā klasē
