@@ -8,10 +8,6 @@ import java.io.*;
 import java.time.LocalTime;
 import java.util.*;
 
-/**
- * Service for generating a TimeTable problem from multiple CSV files.
- * CSV files include: rooms.csv, teachers.csv, lunch_groups.csv, lesson_list.csv
- */
 public class CsvDataLoader {
 
     private static final String DEFAULT_ROOMS_PATH = "data/rooms.csv";
@@ -19,9 +15,6 @@ public class CsvDataLoader {
     private static final String DEFAULT_LUNCH_GROUPS_PATH = "data/lunch_groups.csv";
     private static final String DEFAULT_LESSONS_PATH = "data/lesson_list.csv";
 
-    /**
-     * Generates a TimeTable from all CSV files using default paths.
-     */
     public static TimeTable generateFromAllCsvFiles() {
         return generateFromAllCsvFiles(
                 DEFAULT_ROOMS_PATH,
@@ -32,9 +25,6 @@ public class CsvDataLoader {
         );
     }
 
-    /**
-     * Generates a TimeTable from all CSV files with custom paths.
-     */
     public static TimeTable generateFromAllCsvFiles(
             String roomsCsvPath,
             String teachersCsvPath,
@@ -128,10 +118,6 @@ public class CsvDataLoader {
         );
     }
 
-    /**
-     * Loads rooms from CSV file.
-     * Format: id,roomType
-     */
     public static List<Room> loadRoomsFromCsv(String resourcePath) {
         List<Room> rooms = new ArrayList<>();
 
@@ -246,10 +232,6 @@ public class CsvDataLoader {
         return teachers;
     }
 
-    /**
-     * Loads lunch groups from CSV file.
-     * Format: name,minGrade,maxGrade,lunchStartTime,lunchEndTime
-     */
     public static List<LunchGroup> loadLunchGroupsFromCsv(String resourcePath, List<TimeSlot> allTimeSlots) {
         List<LunchGroup> lunchGroups = new ArrayList<>();
         
@@ -299,9 +281,6 @@ public class CsvDataLoader {
         return lunchGroups;
     }
 
-    /**
-     * Result holder for lesson parsing.
-     */
     private static class LessonParseResult {
         List<TeachingUnit> teachingUnits;
         List<SchoolClass> schoolClasses;
@@ -314,9 +293,6 @@ public class CsvDataLoader {
         }
     }
 
-    /**
-     * Parses lessons CSV and creates teaching units, school classes, and lessons.
-     */
     private static LessonParseResult parseLessonsCsv(String resourcePath, int classCount) {
         List<TeachingUnit> allTeachingUnits = new ArrayList<>();
         List<SchoolClass> schoolClasses = new ArrayList<>();
@@ -419,11 +395,6 @@ public class CsvDataLoader {
         };
     }
 
-    /**
-     * Parses qualified units string.
-     * Format: SUBJECT:minGrade-maxGrade;SUBJECT:minGrade-maxGrade
-     * Example: MATH:1-6;LATVIAN:1-6
-     */
     private static Set<TeachingUnit> parseQualifiedUnits(String qualifiedUnitsStr, List<TeachingUnit> allTeachingUnits) {
         return parseQualifiedUnits(qualifiedUnitsStr, allTeachingUnits, null);
     }
@@ -488,10 +459,6 @@ public class CsvDataLoader {
         return result;
     }
 
-    /**
-     * Parses work time slots from days and time range.
-     * workDaysStr format: MONDAY;TUESDAY;WEDNESDAY
-     */
     private static Set<TimeSlot> parseWorkTimeSlots(
             String workDaysStr,
             String workStartTimeStr,
@@ -566,16 +533,10 @@ public class CsvDataLoader {
         return new BufferedReader(new InputStreamReader(is));
     }
 
-    /**
-     * Creates a BufferedReader from an uploaded MultipartFile.
-     */
     private static BufferedReader getBufferedReaderFromMultipartFile(MultipartFile file) throws IOException {
         return new BufferedReader(new InputStreamReader(file.getInputStream()));
     }
 
-    /**
-     * Loads rooms from uploaded CSV file.
-     */
     private static List<Room> loadRoomsFromUploadedCsv(MultipartFile file) {
         List<Room> rooms = new ArrayList<>();
 
@@ -610,9 +571,6 @@ public class CsvDataLoader {
         return rooms;
     }
 
-    /**
-     * Loads teachers from uploaded CSV file.
-     */
     private static List<Teacher> loadTeachersFromUploadedCsv(
             MultipartFile file,
             Map<String, Room> roomMap,
@@ -689,9 +647,6 @@ public class CsvDataLoader {
         return teachers;
     }
 
-    /**
-     * Loads lunch groups from uploaded CSV file.
-     */
     private static List<LunchGroup> loadLunchGroupsFromUploadedCsv(MultipartFile file, List<TimeSlot> allTimeSlots) {
         List<LunchGroup> lunchGroups = new ArrayList<>();
         
@@ -745,9 +700,6 @@ public class CsvDataLoader {
         return lunchGroups;
     }
 
-    /**
-     * Parses lessons from uploaded CSV file.
-     */
     private static LessonParseResult parseLessonsUploadedCsv(MultipartFile file, int classCount) {
         List<TeachingUnit> allTeachingUnits = new ArrayList<>();
         List<SchoolClass> schoolClasses = new ArrayList<>();
